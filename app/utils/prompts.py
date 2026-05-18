@@ -109,6 +109,19 @@ def get_quiz_prompt(number_of_question, question_type, query, combined_string):
 '''
 
 
-def get_chat_prompt(combined_string, question):
-    """Generate chat prompt for RAG"""
-    return f"Based on the content of these documents: {combined_string}, provide a detailed answer to the following question: {question}. Please only answer the question directly without additional information or recommendations."
+def get_chat_prompt(combined_string, question, language='id'):
+    """
+    Generate chat prompt for RAG
+    
+    Args:
+        combined_string: Combined document text
+        question: User's question
+        language: Language for prompt ('id' for Indonesian, 'en' for English)
+    
+    Returns:
+        Formatted prompt string
+    """
+    if language == 'id':
+        return f"Berdasarkan isi dokumen berikut: {combined_string}, berikan jawaban yang detail untuk pertanyaan berikut: {question}. Mohon jawab pertanyaan secara langsung tanpa informasi tambahan atau rekomendasi."
+    else:
+        return f"Based on the content of these documents: {combined_string}, provide a detailed answer to the following question: {question}. Please only answer the question directly without additional information or recommendations."

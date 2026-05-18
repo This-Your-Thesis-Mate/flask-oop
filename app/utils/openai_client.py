@@ -1,9 +1,10 @@
 """
-OpenAI and Azure OpenAI client utilities
+OpenAI and Sumopod client utilities
 """
 import requests
 import json
-from openai import AzureOpenAI
+from openai import OpenAI
+# from openai import AzureOpenAI  # Legacy Azure OpenAI import
 from groq import Groq
 from app.config import Config
 
@@ -33,26 +34,48 @@ class EmbeddingClient:
         return response.json()['data']
 
 
-class AzureOpenAIClient:
-    """Client for Azure OpenAI Chat Completion"""
+class SumopodClient:
+    """Client for Sumopod Chat Completion"""
     
     def __init__(self):
-        self.client = AzureOpenAI(
-            api_key=Config.AZURE_OPENAI_KEY,
-            api_version=Config.AZURE_OPENAI_API_VERSION,
-            azure_endpoint=Config.AZURE_OPENAI_ENDPOINT
+        self.client = OpenAI(
+            api_key=Config.SUMOPOD_API_KEY,
+            base_url=Config.SUMOPOD_BASE_URL
         )
-        self.deployment_name = Config.AZURE_OPENAI_DEPLOYMENT
+        self.model = Config.SUMOPOD_MODEL
     
     def generate_completion(self, messages, temperature=0.2, top_p=0.95):
         """Generate chat completion"""
         response = self.client.chat.completions.create(
-            model=self.deployment_name,
+            model=self.model,
             messages=messages,
             temperature=temperature,
             top_p=top_p
         )
         return response.choices[0].message.content
+
+
+# Legacy Azure OpenAI Client (commented out, kept for reference)
+# class AzureOpenAIClient:
+#     """Client for Azure OpenAI Chat Completion"""
+#     
+#     def __init__(self):
+#         self.client = AzureOpenAI(
+#             api_key=Config.AZURE_OPENAI_KEY,
+#             api_version=Config.AZURE_OPENAI_API_VERSION,
+#             azure_endpoint=Config.AZURE_OPENAI_ENDPOINT
+#         )
+#         self.deployment_name = Config.AZURE_OPENAI_DEPLOYMENT
+#     
+#     def generate_completion(self, messages, temperature=0.2, top_p=0.95):
+#         """Generate chat completion"""
+#         response = self.client.chat.completions.create(
+#             model=self.deployment_name,
+#             messages=messages,
+#             temperature=temperature,
+#             top_p=top_p
+#         )
+#         return response.choices[0].message.content
 
 
 class GroqClient:
@@ -92,5 +115,5 @@ class GroqClient:
 
 # Singleton instances
 embedding_client = EmbeddingClient()
-azure_openai_client = AzureOpenAIClient()
+azure_openai_client = SumopodClient()  # Aliased for backward compatibility
 groq_client = GroqClient()
