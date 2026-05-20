@@ -1,6 +1,3 @@
-"""
-RAG service for retrieval and generation
-"""
 import traceback
 import re
 from app.repositories import vector_repository
@@ -68,60 +65,159 @@ async def translate_to_indonesian(text):
         return response.strip()
     except Exception as e:
         print(f"Translation error: {e}")
-        return text  # Return original if translation fails
+        return text  
 
 
 class RAGService:
     """Service for RAG (Retrieval-Augmented Generation) operations"""
     
     @staticmethod
+    def _clean_llm_output(text):
+        """
+        Clean LLM output by removing escape characters and formatting issues
+        
+        Args:
+            text: Raw text from LLM
+        
+        Returns:
+            str: Cleaned text
+        """
+        if not text:
+            return text
+        
+        # Replace literal escape sequences with actual characters
+        text = text.replace('\\n', '\n')
+        text = text.replace('\\t', '\t')
+        text = text.replace('\\r', '\r')
+        
+        # Remove excessive whitespace at start and end
+        text = text.strip()
+        
+        # Remove excessive blank lines (more than 2 consecutive newlines)
+        while '\n\n\n' in text:
+            text = text.replace('\n\n\n', '\n\n')
+        
+        return text
+    
+    @staticmethod
     def _generate_summary(combined_text, detected_lang):
         """
-        Helper method to generate summary from combined text
+        Generate educational summary from combined text
         
         Args:
             combined_text: Combined text from retrieved chunks
             detected_lang: Language ('id' or 'en')
         
         Returns:
-            str: Generated summary
+            str: Generated summary in Markdown format
         """
         if detected_lang == 'id':
-            summary_prompt = f"""Berdasarkan dokumen berikut, buatlah ringkasan yang komprehensif dan terstruktur:
+            system_message = """Anda adalah seorang instruktur pembelajaran yang berpengalaman. Tugas Anda adalah membuat ringkasan modul belajar yang:
+1. Berdasarkan HANYA pada dokumen yang diberikan
+2. Tidak menambahkan informasi dari luar dokumen
+3. Tidak membuat asumsi atau contoh yang tidak ada di dokumen
+4. Ditulis secara naratif, runtut, dan mudah dipahami oleh mahasiswa
+5. Menggunakan struktur Markdown yang jelas
+6. Output HARUS dalam format Markdown yang valid tanpa escape characters
+
+Penting: Pastikan setiap paragraf mengalir dengan natural, saling terhubung, dan mudah diikuti."""
+
+            user_message = f"""Berdasarkan dokumen berikut, buatlah ringkasan modul belajar dengan struktur yang ditentukan:
 
 DOKUMEN:
 {combined_text}
 
-Petunjuk:
-1. Identifikasi topik-topik utama
-2. Jelaskan konsep-konsep kunci
-3. Susun ringkasan dengan struktur yang jelas (menggunakan heading, poin-poin, dll)
-4. Pastikan ringkasan mudah dipahami dan informatif
-5. Gunakan Bahasa Indonesia yang baik dan benar
+FORMAT RINGKASAN (dalam Markdown):
 
-Berikan hanya ringkasan, tanpa penjelasan tambahan."""
+# Ringkasan Modul
+
+## Gambaran Umum
+Tulis satu paragraf yang menjelaskan gambaran umum modul secara singkat dan jelas. Paragraf harus menangkap esensi utama modul tanpa detail yang berlebihan.
+
+## Ringkasan Materi
+Tulis beberapa paragraf yang merangkum materi utama. Setiap paragraf harus:
+- Menjelaskan satu konsep atau topik utama
+- Saling terhubung dan mengalir dengan natural
+- Ditulis dalam bahasa yang mudah dipahami mahasiswa
+- Tidak menggunakan bullet point, hanya paragraf naratif
+
+## Konsep Penting
+Identifikasi 5-7 konsep penting dari modul. Tuliskan sebagai poin singkat (1-2 baris per konsep), fokus pada apa, mengapa, dan bagaimana konsep tersebut relevan. Format:
+- Konsep 1: Penjelasan singkat
+- Konsep 2: Penjelasan singkat
+(dst)
+
+## Kesimpulan
+Tulis satu paragraf yang berisi kesimpulan utama dari seluruh modul. Jelaskan pentingnya materi yang telah dirangkum dan bagaimana konsep ini dapat diterapkan.
+
+PENTING: 
+- Jangan gunakan escape characters seperti \\n atau \\t
+- Pastikan output adalah Markdown yang valid
+- Jangan tambahkan informasi di luar dokumen
+- Fokus pada apa yang ada di dokumen, bukan asumsi Anda"""
         else:
-            summary_prompt = f"""Based on the following document, create a comprehensive and well-structured summary:
+            system_message = """You are an experienced learning instructor. Your task is to create a module summary that:
+1. Is based ONLY on the provided document
+2. Does not add information from outside the document
+3. Does not make assumptions or provide examples not in the document
+4. Is written in a narrative, coherent, and student-friendly manner
+5. Uses clear Markdown structure
+6. Output MUST be in valid Markdown format without escape characters
+
+Important: Ensure each paragraph flows naturally, connects well, and is easy to follow."""
+
+            user_message = f"""Based on the following document, create a module summary with the specified structure:
 
 DOCUMENT:
 {combined_text}
 
-Instructions:
-1. Identify the main topics
-2. Explain key concepts
-3. Structure the summary clearly (using headings, bullet points, etc.)
-4. Ensure the summary is clear and informative
-5. Use proper English
+SUMMARY FORMAT (in Markdown):
 
-Provide only the summary, without additional explanation."""
+# Module Summary
+
+## Overview
+Write one paragraph that explains the general overview of the module clearly and concisely. The paragraph should capture the main essence of the module without excessive detail.
+
+## Material Summary
+Write several paragraphs that summarize the main material. Each paragraph should:
+- Explain one main concept or topic
+- Flow naturally and connect well
+- Be written in language easy for students to understand
+- Use narrative paragraphs, not bullet points
+
+## Key Concepts
+Identify 5-7 important concepts from the module. Write as short bullet points (1-2 lines per concept), focusing on what, why, and how the concept is relevant. Format:
+- Concept 1: Brief explanation
+- Concept 2: Brief explanation
+(etc)
+
+## Conclusion
+Write one paragraph containing the main conclusion of the entire module. Explain the importance of the material summarized and how these concepts can be applied.
+
+IMPORTANT:
+- Do not use escape characters like \\n or \\t
+- Ensure output is valid Markdown
+- Do not add information outside the document
+- Focus on what exists in the document, not your assumptions"""
         
         result = azure_openai_client.generate_completion(
-            messages=[{"role": "user", "content": summary_prompt}],
-            temperature=0.3,
-            top_p=0.95
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_message
+                },
+                {
+                    "role": "user",
+                    "content": user_message
+                }
+            ],
+            temperature=0.2,
+            top_p=0.9
         )
         
-        return result
+        # Clean the output
+        cleaned_result = RAGService._clean_llm_output(result)
+        return cleaned_result
     
     @staticmethod
     def chat(prompt, course_id, tenant_id, threshold=0.4, limit=5, messages=None):
@@ -154,37 +250,97 @@ Provide only the summary, without additional explanation."""
             if is_summary_request(prompt):
                 print("Summary request detected, generating summary...")
                 
-                # Use a general query to retrieve key chunks from the course
-                if detected_lang == 'id':
-                    general_query = "Apa topik utama dalam dokumen ini?"
-                else:
-                    general_query = "What are the main topics in this document?"
+                embedding_prompt_for_validation = prompt
                 
-                # Get embedding for general query
-                query_embedding = embedding_client.get_embedding(general_query)
+                if detected_lang == 'en':
+                    print("Detected English, translating for embedding validation...")
+                    try:
+                        response = azure_openai_client.generate_completion(
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "You are a professional translator. Translate the following text to Indonesian accurately. Provide only the translation, without additional explanation."
+                                },
+                                {
+                                    "role": "user",
+                                    "content": f"Translate to Indonesian:\n{prompt}"
+                                }
+                            ],
+                            temperature=0.3,
+                            top_p=0.95
+                        )
+                        embedding_prompt_for_validation = response.strip()
+                        print(f"Translated prompt for validation: {embedding_prompt_for_validation}")
+                    except Exception as e:
+                        print(f"Translation failed: {e}, using original prompt")
+                        embedding_prompt_for_validation = prompt
                 
-                # Retrieve more chunks for summary (very low threshold to ensure we get results)
-                data = vector_repository.similarity_search(
+                # Get embedding for original/translated prompt
+                query_embedding = embedding_client.get_embedding(embedding_prompt_for_validation)
+                
+                # First search with strict threshold to validate relevance
+                print(f"[RAG] Validating summary request relevance with strict threshold 0.35...")
+                validation_data = vector_repository.similarity_search(
                     query_embedding=query_embedding,
                     course_id=course_id,
                     tenant_id=tenant_id,
-                    threshold=0.0,  # Set to 0 to get all available chunks
-                    limit=30  # Get more chunks for better summary
+                    threshold=0.35, 
+                    limit=3
                 )
                 
-                print(f"Retrieved {len(data)} chunks for summary")
+                print(f"[RAG] Validation search retrieved {len(validation_data)} chunks with relevance")
                 
-                if not data:
-                    if detected_lang == 'en':
-                        error_message = "No documents found for the specified course. Cannot generate summary."
+                if not validation_data or len(validation_data) == 0:
+                    print("[RAG] Summary request rejected - no relevant content in course")
+                    if detected_lang == 'id':
+                        error_message = "Pertanyaan yang Anda ajukan tidak relevan dengan materi di kursus ini. Tidak dapat membuat ringkasan."
                     else:
-                        error_message = "No documents found for the specified course. Cannot generate summary."
+                        error_message = "The summary request is not relevant to the materials in this course. Cannot generate summary."
                     return {
                         "message": error_message
                     }
                 
-                # Combine retrieved texts
-                combined_text = "".join([row[0] for row in data])
+                # Check best similarity score - use strict threshold
+                best_similarity = validation_data[0][1]
+                print(f"[RAG] Best validation similarity: {best_similarity:.4f}")
+                
+                if best_similarity < 0.35:
+                    print(f"[RAG] Summary request rejected - best similarity {best_similarity:.4f} is below strict threshold")
+                    if detected_lang == 'id':
+                        error_message = "Pertanyaan yang Anda ajukan tidak relevan dengan materi di kursus ini. Tidak dapat membuat ringkasan."
+                    else:
+                        error_message = "The summary request is not relevant to the materials in this course. Cannot generate summary."
+                    return {
+                        "message": error_message
+                    }
+                
+                # Content is relevant, now retrieve comprehensive chunks for summary
+                print("[RAG] Content validation passed, retrieving comprehensive chunks for summary...")
+                
+                # Retrieve more chunks with moderate threshold for comprehensive context
+                data = vector_repository.similarity_search(
+                    query_embedding=query_embedding,
+                    course_id=course_id,
+                    tenant_id=tenant_id,
+                    threshold=0.3, 
+                    limit=30
+                )
+                
+                print(f"[RAG] Retrieved {len(data)} chunks for comprehensive summary")
+                
+                if not data or len(data) == 0:
+                    if detected_lang == 'id':
+                        error_message = "Tidak ada dokumen yang ditemukan untuk membuat ringkasan."
+                    else:
+                        error_message = "No documents found to create summary."
+                    return {
+                        "message": error_message
+                    }
+                
+                # Combine retrieved texts with clear separators
+                combined_text = "\n\n--- BAGIAN DOKUMEN ---\n\n".join(
+                    [row[0].strip() for row in data if row[0] and row[0].strip()]
+                )
                 
                 # Generate summary
                 summary_result = RAGService._generate_summary(combined_text, detected_lang)
@@ -198,7 +354,6 @@ Provide only the summary, without additional explanation."""
             
             if detected_lang == 'en':
                 print("Detected English, translating to Indonesian for embedding...")
-                # Translate to Indonesian for better matching with Indonesian documents
                 try:
                     response = azure_openai_client.generate_completion(
                         messages=[
@@ -220,7 +375,7 @@ Provide only the summary, without additional explanation."""
                     print(f"Translation failed: {e}, using original prompt")
                     embedding_prompt = prompt
             
-            # 1. Get query embedding using potentially translated prompt
+
             query_embedding = embedding_client.get_embedding(embedding_prompt)
             
             print(f"[RAG] Searching with - Course ID: {course_id}, Tenant ID: {tenant_id}, Threshold: {threshold}, Limit: {limit}")
@@ -244,8 +399,8 @@ Provide only the summary, without additional explanation."""
             # Check if we have NO data
             if not data or len(data) == 0:
                 print("[RAG] No chunks retrieved - returning error")
-                if detected_lang == 'en':
-                    error_message = "The question provided is not found in the documents for this course. Please ask a relevant question."
+                if detected_lang == 'id':
+                    error_message = "Pertanyaan yang Anda ajukan tidak ditemukan dalam dokumen kursus ini. Silakan ajukan pertanyaan yang relevan dengan materi."
                 else:
                     error_message = "The question provided is not found in the documents for this course. Please ask a relevant question."
                 return {
@@ -258,8 +413,8 @@ Provide only the summary, without additional explanation."""
             
             if best_similarity < threshold:
                 print(f"[RAG] Best similarity {best_similarity:.4f} is below threshold {threshold} - returning error")
-                if detected_lang == 'en':
-                    error_message = "The question provided is not relevant to the materials in this course. Please ask a question related to the course content."
+                if detected_lang == 'id':
+                    error_message = "Pertanyaan yang Anda ajukan tidak relevan dengan materi di kursus ini. Silakan ajukan pertanyaan yang berkaitan dengan konten kursus."
                 else:
                     error_message = "The question provided is not relevant to the materials in this course. Please ask a question related to the course content."
                 return {
@@ -268,14 +423,16 @@ Provide only the summary, without additional explanation."""
             
             print("[RAG] Validation passed - generating response")
             
-            # 3. Combine retrieved texts
-            combined_string = "".join([row[0] for row in data])
+            # 3. Combine retrieved texts with clear separators
+            combined_string = "\n\n--- BAGIAN DOKUMEN ---\n\n".join(
+                [row[0].strip() for row in data if row[0] and row[0].strip()]
+            )
             
             # Safety check: ensure we have substantial content
             if not combined_string or len(combined_string.strip()) == 0:
                 print("[RAG] Combined text is empty - returning error")
-                if detected_lang == 'en':
-                    error_message = "The retrieved documents are empty. Cannot generate a response."
+                if detected_lang == 'id':
+                    error_message = "Dokumen yang diambil kosong. Tidak dapat membuat respons."
                 else:
                     error_message = "The retrieved documents are empty. Cannot generate a response."
                 return {
@@ -293,10 +450,21 @@ Provide only the summary, without additional explanation."""
             else:
                 final_prompt += "\n\nIMPORTANT: Respond ONLY in Indonesian."
             
+            # Create system message for context-aware response
+            if detected_lang == 'id':
+                system_message = "Anda adalah asisten pembelajaran yang membantu mahasiswa memahami materi. Jawab HANYA berdasarkan dokumen dan konteks yang diberikan. Jangan menambahkan informasi dari luar dokumen. Berikan jawaban yang jelas, ringkas, dan mudah dipahami."
+            else:
+                system_message = "You are a learning assistant helping students understand course material. Answer ONLY based on the provided document and context. Do not add information from outside the document. Provide a clear, concise, and understandable answer."
+            
             messages_copy = messages + [{"role": "user", "content": final_prompt}]
             
             result = azure_openai_client.generate_completion(
-                messages=messages_copy,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_message
+                    }
+                ] + messages_copy,
                 temperature=0.4,
                 top_p=0.95
             )
@@ -310,6 +478,4 @@ Provide only the summary, without additional explanation."""
             traceback.print_exc()
             raise Exception("Error executing RAG chat")
 
-
-# Singleton instance
 rag_service = RAGService()
