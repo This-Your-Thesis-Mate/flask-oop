@@ -1,6 +1,3 @@
-"""
-Annotation helper utilities
-"""
 from app.config import Config
 from app.utils.text_processor import TextProcessor
 from app.models import Annotation

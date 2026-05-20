@@ -1,6 +1,3 @@
-"""
-Base route handler class for all route blueprints
-"""
 from abc import ABC, abstractmethod
 from flask import jsonify
 

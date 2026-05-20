@@ -11,7 +11,7 @@ class QuizService:
     """Service for quiz generation"""
     
     @staticmethod
-    def generate_quiz(query_text, course_id, module_id, question_type, number_of_question, threshold=0.4, limit=5):
+    def generate_quiz(query_text, course_id, module_id, question_type, number_of_question, tenant_id, threshold=0.4, limit=5):
         """
         Generate quiz questions based on query and course material
         
@@ -21,12 +21,17 @@ class QuizService:
             module_id: Module ID
             question_type: Type of questions (comma-separated)
             number_of_question: Number of questions (comma-separated)
+            tenant_id: Tenant ID (REQUIRED for data isolation)
             threshold: Similarity threshold (default 0.4)
             limit: Maximum number of chunks to retrieve (default 5)
         
         Returns:
             dict: Parsed and original quiz questions
         """
+        # Validate tenant_id is provided
+        if not tenant_id:
+            raise Exception("tenant_id is required for data isolation")
+        
         try:
             # 1. Get query embedding
             query_embedding = embedding_client.get_embedding(query_text)
@@ -35,6 +40,7 @@ class QuizService:
             data = vector_repository.similarity_search(
                 query_embedding=query_embedding,
                 course_id=course_id,
+                tenant_id=tenant_id,
                 threshold=threshold,
                 limit=limit,
                 module_id=module_id
@@ -81,7 +87,7 @@ class QuizService:
                 quiz_json = quiz_parser.parse_quiz(result_keseluruhan)
             except Exception as e:
                 print("Error parsing quiz:", e)
-                raise Exception("the response does not match the format, try changing the query to a more appropriate one")
+                raise Exception("The response does not match the expected format. Please try changing the query to a more appropriate one.")
             
             return {
                 "parsed": quiz_json,

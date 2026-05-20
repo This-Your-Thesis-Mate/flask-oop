@@ -1,6 +1,3 @@
-"""
-Routes package
-"""
 from app.routes.base_handler import BaseRouteHandler
 from app.routes.upload import upload_bp
 from app.routes.rag import rag_bp

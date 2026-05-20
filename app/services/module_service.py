@@ -8,20 +8,21 @@ class ModuleService:
     """Service for module management"""
     
     @staticmethod
-    def delete_module(module_id, course_id):
+    def delete_module(module_id, course_id, tenant_id):
         """
         Delete a module and all related data
         
         Args:
             module_id: Module ID
             course_id: Course ID
+            tenant_id: Tenant ID
         
         Returns:
             bool: True if deleted successfully
         """
-        result = module_repository.delete_module(module_id, course_id)
+        result = module_repository.delete_module(module_id, course_id, tenant_id)
         if not result:
-            raise Exception('Module not found')
+            raise Exception('Module not found.')
         return True
 
 

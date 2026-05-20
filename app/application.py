@@ -1,6 +1,3 @@
-"""
-Application factory and Flask app configuration
-"""
 from flask import Flask
 from flask_cors import CORS
 from app.config import Config

@@ -124,13 +124,14 @@ Provide only the summary, without additional explanation."""
         return result
     
     @staticmethod
-    def chat(prompt, course_id, threshold=0.4, limit=5, messages=None):
+    def chat(prompt, course_id, tenant_id, threshold=0.4, limit=5, messages=None):
         """
         Chat with RAG: retrieve relevant chunks and generate response
         
         Args:
             prompt: User question/prompt
             course_id: Course ID to search within
+            tenant_id: Tenant ID for data isolation (REQUIRED)
             threshold: Similarity threshold (default 0.4)
             limit: Maximum number of chunks to retrieve (default 5)
             messages: Previous conversation messages (default None)
@@ -138,6 +139,10 @@ Provide only the summary, without additional explanation."""
         Returns:
             dict: Response with generated message
         """
+        # Validate tenant_id is provided
+        if not tenant_id:
+            raise Exception("tenant_id is required for data isolation")
+        
         if messages is None:
             messages = []
         
@@ -162,6 +167,7 @@ Provide only the summary, without additional explanation."""
                 data = vector_repository.similarity_search(
                     query_embedding=query_embedding,
                     course_id=course_id,
+                    tenant_id=tenant_id,
                     threshold=0.0,  # Set to 0 to get all available chunks
                     limit=30  # Get more chunks for better summary
                 )
@@ -172,7 +178,7 @@ Provide only the summary, without additional explanation."""
                     if detected_lang == 'en':
                         error_message = "No documents found for the specified course. Cannot generate summary."
                     else:
-                        error_message = "Tidak ada dokumen ditemukan untuk kursus yang ditentukan. Tidak dapat membuat ringkasan."
+                        error_message = "No documents found for the specified course. Cannot generate summary."
                     return {
                         "message": error_message
                     }
@@ -217,27 +223,66 @@ Provide only the summary, without additional explanation."""
             # 1. Get query embedding using potentially translated prompt
             query_embedding = embedding_client.get_embedding(embedding_prompt)
             
+            print(f"[RAG] Searching with - Course ID: {course_id}, Tenant ID: {tenant_id}, Threshold: {threshold}, Limit: {limit}")
+            
             # 2. Retrieve relevant chunks
             data = vector_repository.similarity_search(
                 query_embedding=query_embedding,
                 course_id=course_id,
+                tenant_id=tenant_id,
                 threshold=threshold,
                 limit=limit
             )
             
-            print(f"Retrieved {len(data)} chunks")
+            print(f"[RAG] Retrieved {len(data)} chunks from database")
             
-            if not data:
+            # Debug: Print what we got
+            if data:
+                for idx, (chunk_text, similarity) in enumerate(data):
+                    print(f"[RAG] Chunk {idx+1} - Similarity: {similarity:.4f}, Length: {len(chunk_text)}")
+            
+            # Check if we have NO data
+            if not data or len(data) == 0:
+                print("[RAG] No chunks retrieved - returning error")
                 if detected_lang == 'en':
-                    error_message = "The question provided is not found in the documents. Please ask a relevant question."
+                    error_message = "The question provided is not found in the documents for this course. Please ask a relevant question."
                 else:
-                    error_message = "Pertanyaan yang diberikan tidak ada pada dokumen, tolong beri pertanyaan yang sesuai."
+                    error_message = "The question provided is not found in the documents for this course. Please ask a relevant question."
                 return {
                     "message": error_message
                 }
             
+            # Additional validation: check if the best match has reasonable similarity
+            best_similarity = data[0][1] if len(data) > 0 else 0
+            print(f"[RAG] Best match similarity: {best_similarity:.4f}, threshold: {threshold}")
+            
+            if best_similarity < threshold:
+                print(f"[RAG] Best similarity {best_similarity:.4f} is below threshold {threshold} - returning error")
+                if detected_lang == 'en':
+                    error_message = "The question provided is not relevant to the materials in this course. Please ask a question related to the course content."
+                else:
+                    error_message = "The question provided is not relevant to the materials in this course. Please ask a question related to the course content."
+                return {
+                    "message": error_message
+                }
+            
+            print("[RAG] Validation passed - generating response")
+            
             # 3. Combine retrieved texts
             combined_string = "".join([row[0] for row in data])
+            
+            # Safety check: ensure we have substantial content
+            if not combined_string or len(combined_string.strip()) == 0:
+                print("[RAG] Combined text is empty - returning error")
+                if detected_lang == 'en':
+                    error_message = "The retrieved documents are empty. Cannot generate a response."
+                else:
+                    error_message = "The retrieved documents are empty. Cannot generate a response."
+                return {
+                    "message": error_message
+                }
+            
+            print(f"[RAG] Combined text length: {len(combined_string)} characters")
             
             # 4. Generate response (use original prompt for response, not translated)
             final_prompt = get_chat_prompt(combined_string, prompt, language=detected_lang)

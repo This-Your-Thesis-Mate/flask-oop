@@ -1,6 +1,3 @@
-"""
-Quiz parsing utilities
-"""
 import re
 
 

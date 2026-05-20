@@ -1,6 +1,3 @@
-"""
-Health check routes
-"""
 from flask import Blueprint, jsonify
 from app.routes.base_handler import BaseRouteHandler
 

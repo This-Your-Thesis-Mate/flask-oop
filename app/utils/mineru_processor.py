@@ -1,6 +1,3 @@
-"""
-MinerU document processing utilities
-"""
 import time
 import json
 import base64
@@ -88,14 +85,14 @@ class MinerUProcessor:
             data_url = self.img_to_data_url(img_path)
             return groq_client.vision_annotate(data_url, prompt)
         except Exception as e:
-            return f"[ERROR anotasi gambar] {e}"
+            return f"[ERROR image annotation] {e}"
     
     def groq_text_annotate(self, prompt: str) -> str:
         """Generate table annotation using Groq text"""
         try:
             return groq_client.text_annotate(prompt)
         except Exception as e:
-            return f"[ERROR anotasi tabel] {e}"
+            return f"[ERROR table annotation] {e}"
     
     def annotate_dir(self, work_dir: Path):
         """Generate annotations for images and tables"""
@@ -188,7 +185,7 @@ class MinerUProcessor:
                 break
         
         if not main_md:
-            return "[ERROR] Tidak ada file teks utama (.md) ditemukan.\n"
+            return "[ERROR] No main text file (.md) found.\n"
         
         content = main_md.read_text(encoding="utf-8", errors="ignore")
         

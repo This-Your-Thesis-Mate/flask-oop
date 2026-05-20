@@ -1,6 +1,3 @@
-"""
-OpenAI and Sumopod client utilities
-"""
 import requests
 import json
 from openai import OpenAI

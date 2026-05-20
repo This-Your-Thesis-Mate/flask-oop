@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
 
-# Load .env hanya di development environment
-# Di production, gunakan environment variable yang di-inject oleh container/orchestrator
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 if ENVIRONMENT == "development":
     load_dotenv()

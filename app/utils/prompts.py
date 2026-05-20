@@ -111,7 +111,7 @@ def get_quiz_prompt(number_of_question, question_type, query, combined_string):
 
 def get_chat_prompt(combined_string, question, language='id'):
     """
-    Generate chat prompt for RAG
+    Generate chat prompt for RAG with anti-hallucination measures
     
     Args:
         combined_string: Combined document text
@@ -122,6 +122,34 @@ def get_chat_prompt(combined_string, question, language='id'):
         Formatted prompt string
     """
     if language == 'id':
-        return f"Berdasarkan isi dokumen berikut: {combined_string}, berikan jawaban yang detail untuk pertanyaan berikut: {question}. Mohon jawab pertanyaan secara langsung tanpa informasi tambahan atau rekomendasi."
+        return f"""ANDA ADALAH ASISTEN YANG HANYA MENJAWAB BERDASARKAN DOKUMEN YANG DISEDIAKAN.
+
+DOKUMEN REFERENSI:
+{combined_string}
+
+PETUNJUK PENTING:
+1. Jawab HANYA berdasarkan isi dokumen di atas.
+2. JANGAN gunakan pengetahuan luar atau informasi dari luar dokumen.
+3. Jika jawaban tidak ada dalam dokumen, katakan: "This information is not available in the provided document."
+4. Berikan jawaban yang spesifik dan langsung tanpa penjelasan tambahan.
+
+PERTANYAAN PENGGUNA:
+{question}
+
+JAWAB HANYA BERDASARKAN DOKUMEN DI ATAS:"""
     else:
-        return f"Based on the content of these documents: {combined_string}, provide a detailed answer to the following question: {question}. Please only answer the question directly without additional information or recommendations."
+        return f"""YOU ARE AN ASSISTANT THAT ONLY ANSWERS BASED ON THE PROVIDED DOCUMENT.
+
+REFERENCE DOCUMENT:
+{combined_string}
+
+IMPORTANT INSTRUCTIONS:
+1. Answer ONLY based on the document content above.
+2. DO NOT use external knowledge or information outside this document.
+3. If the answer is not in the document, say: "This information is not available in the provided document."
+4. Provide a specific and direct answer without additional explanations.
+
+USER QUESTION:
+{question}
+
+ANSWER ONLY BASED ON THE DOCUMENT ABOVE:"""

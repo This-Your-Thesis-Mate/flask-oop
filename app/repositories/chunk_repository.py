@@ -1,6 +1,3 @@
-"""
-Chunk repository for database operations
-"""
 from psycopg2.extras import execute_values
 from app.repositories.database import db_manager
 
@@ -9,14 +6,14 @@ class ChunkRepository:
     """Repository for chunk-related database operations"""
     
     @staticmethod
-    def create_chunk(module_id, chunk_text):
+    def create_chunk(module_id, chunk_text, tenant_id):
         """Create a new chunk"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO chunks (module_id, chunk_text) VALUES (%s, %s) RETURNING id",
-                (module_id, chunk_text)
+                "INSERT INTO chunks (module_id, chunk_text, tenant_id) VALUES (%s, %s, %s) RETURNING id",
+                (module_id, chunk_text, tenant_id)
             )
             chunk_id = cursor.fetchone()[0]
             conn.commit()
@@ -29,8 +26,8 @@ class ChunkRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def get_chunks_by_module(module_id):
-        """Get all chunks for a module"""
+    def get_chunks_by_module(module_id, tenant_id):
+        """Get all chunks for a module and tenant"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
@@ -38,10 +35,10 @@ class ChunkRepository:
                 """
                 SELECT chunk_text 
                 FROM chunks 
-                WHERE module_id = %s
+                WHERE module_id = %s AND tenant_id = %s
                 ORDER BY id
                 """,
-                (module_id,)
+                (module_id, tenant_id)
             )
             result = cursor.fetchall()
             return result
@@ -50,10 +47,33 @@ class ChunkRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def save_chunks_and_embeddings(module_id, chunks_data):
+    def get_chunks_by_ref_module_id(ref_module_id, tenant_id):
+        """Get all chunks for a module by ref_module_id and tenant_id"""
+        conn = db_manager.get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT c.chunk_text 
+                FROM chunks c
+                JOIN modules m ON c.module_id = m.id
+                WHERE m.ref_module_id = %s AND c.tenant_id = %s
+                ORDER BY c.id
+                """,
+                (ref_module_id, tenant_id)
+            )
+            result = cursor.fetchall()
+            return result
+        finally:
+            cursor.close()
+            db_manager.return_connection(conn)
+    
+    @staticmethod
+    def save_chunks_and_embeddings(module_id, chunks_data, tenant_id):
         """
         Save multiple chunks and their embeddings
         chunks_data: list of tuples (chunk_text, embedding_vector)
+        tenant_id: Tenant ID
         """
         conn = db_manager.get_connection()
         cursor = conn.cursor()
@@ -63,18 +83,18 @@ class ChunkRepository:
             for chunk_text, embedding_vec in chunks_data:
                 # Save chunk
                 cursor.execute(
-                    "INSERT INTO chunks (module_id, chunk_text) VALUES (%s, %s) RETURNING id",
-                    (module_id, chunk_text)
+                    "INSERT INTO chunks (module_id, chunk_text, tenant_id) VALUES (%s, %s, %s) RETURNING id",
+                    (module_id, chunk_text, tenant_id)
                 )
                 chunk_id = cursor.fetchone()[0]
                 
-                # Prepare embedding data
-                embedding_data.append((embedding_vec, chunk_id))
+                # Prepare embedding data (include tenant_id)
+                embedding_data.append((embedding_vec, chunk_id, tenant_id))
             
             # Bulk insert embeddings
             execute_values(
                 cursor,
-                "INSERT INTO tbl_vector (embedding, chunk_id) VALUES %s",
+                "INSERT INTO tbl_vector (embedding, chunk_id, tenant_id) VALUES %s",
                 embedding_data
             )
             
@@ -86,6 +106,4 @@ class ChunkRepository:
             cursor.close()
             db_manager.return_connection(conn)
 
-
-# Singleton instance
 chunk_repository = ChunkRepository()

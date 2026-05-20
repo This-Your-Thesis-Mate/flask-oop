@@ -1,6 +1,3 @@
-"""
-Annotation repository for database operations
-"""
 from app.repositories.database import db_manager
 
 
@@ -8,13 +5,14 @@ class AnnotationRepository:
     """Repository for annotation-related database operations"""
     
     @staticmethod
-    def create_annotations(module_id, annotations):
+    def create_annotations(module_id, annotations, tenant_id):
         """
         Create annotations for a module
         
         Args:
             module_id: Module ID
             annotations: List of Annotation objects
+            tenant_id: Tenant ID
         """
         conn = db_manager.get_connection()
         cursor = conn.cursor()
@@ -22,10 +20,10 @@ class AnnotationRepository:
             for annotation in annotations:
                 cursor.execute(
                     """
-                    INSERT INTO module_annotations (module_id, page_number, text)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO module_annotations (module_id, page_number, text, tenant_id)
+                    VALUES (%s, %s, %s, %s)
                     """,
-                    (module_id, annotation.page_number, annotation.text)
+                    (module_id, annotation.page_number, annotation.text, tenant_id)
                 )
             conn.commit()
         except Exception as e:
@@ -36,8 +34,8 @@ class AnnotationRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def get_annotations(module_id):
-        """Get all annotations for a module"""
+    def get_annotations(module_id, tenant_id):
+        """Get all annotations for a module and tenant"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
@@ -45,10 +43,10 @@ class AnnotationRepository:
                 """
                 SELECT page_number, text 
                 FROM module_annotations 
-                WHERE module_id = %s
+                WHERE module_id = %s AND tenant_id = %s
                 ORDER BY page_number
                 """,
-                (module_id,)
+                (module_id, tenant_id)
             )
             result = cursor.fetchall()
             return result
@@ -57,12 +55,12 @@ class AnnotationRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def delete_annotations(module_id):
-        """Delete all annotations for a module"""
+    def delete_annotations(module_id, tenant_id):
+        """Delete all annotations for a module and tenant"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("DELETE FROM module_annotations WHERE module_id = %s", (module_id,))
+            cursor.execute("DELETE FROM module_annotations WHERE module_id = %s AND tenant_id = %s", (module_id, tenant_id))
             conn.commit()
         except Exception as e:
             conn.rollback()
