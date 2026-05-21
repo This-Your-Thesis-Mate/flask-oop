@@ -1,137 +1,87 @@
 import time
-from typing import Optional
-from app.utils.openai_client import groq_client, azure_openai_client
+from app.utils.openai_client import groq_client
 
 
 class AnnotationClient:
     """
-    Annotation client with automatic fallback.
-    - Uses Groq by default (faster)
-    - Falls back to Sumopod (GPT-4o-mini) when Groq returns 429 (Too Many Requests)
-    - Switches back to Groq after 20 seconds cooldown
+    Annotation client using Groq vision.
+    If rate limited (429): Wait 20 seconds, then retry (no fallback).
     """
     
     def __init__(self):
-        self.using_fallback = False
-        self.fallback_start_time = None
-        self.fallback_cooldown = 20  # 20 seconds before switching back to Groq
-        self.rate_limit_errors = 0
-        
-    def _check_fallback_timeout(self) -> bool:
-        """Check if fallback cooldown period has expired"""
-        if not self.using_fallback:
-            return False
-        
-        if self.fallback_start_time is None:
-            return False
-        
-        elapsed = time.time() - self.fallback_start_time
-        if elapsed >= self.fallback_cooldown:
-            print(f"\n✅ [FALLBACK] Cooldown expired ({elapsed:.1f}s). Switching back to Groq.")
-            self.using_fallback = False
-            self.fallback_start_time = None
-            self.rate_limit_errors = 0
-            return True
-        
-        return False
-    
-    def _activate_fallback(self):
-        """Activate fallback to Sumopod/GPT"""
-        self.using_fallback = True
-        self.fallback_start_time = time.time()
-        self.rate_limit_errors += 1
-        print(f"\n⚠️  [FALLBACK] Rate limited by Groq. Switching to Sumopod (GPT-4o-mini)")
-        print(f"   Error count: {self.rate_limit_errors}")
-        print(f"   Fallback mode active for {self.fallback_cooldown} seconds\n")
+        self.rate_limit_errors = 0  # Track 429 errors
     
     def vision_annotate(self, data_url: str, prompt: str) -> str:
         """
-        Generate image annotation with fallback mechanism.
+        Generate image annotation using Groq with retry on rate limit.
         
-        Primary: Groq vision
-        Fallback: Sumopod (GPT-4o-mini) vision when Groq rate-limited
+        If 429 error: Wait 20 seconds, then retry Groq (no fallback)
         """
-        # Check if we should switch back to Groq
-        self._check_fallback_timeout()
-        
-        if self.using_fallback:
-            # Use Sumopod (GPT-4o-mini)
-            try:
-                print(f"📸 [ANNOTATION] Using Sumopod (GPT-4o-mini) for image annotation...")
-                result = azure_openai_client.vision_annotate(data_url, prompt)
-                return result
-            except Exception as e:
-                error_msg = f"[ERROR] Sumopod vision annotation failed: {e}"
-                print(error_msg)
-                return error_msg
-        else:
-            # Try Groq first (primary)
-            try:
-                print(f"📸 [ANNOTATION] Using Groq for image annotation...")
-                result = groq_client.vision_annotate(data_url, prompt)
-                return result
-            except Exception as e:
-                error_str = str(e)
-                
-                # Check if it's a rate limit error (429) - ONLY THEN fallback
-                if "429" in error_str or "too many" in error_str.lower():
-                    self._activate_fallback()
-                    # Recursively call to use fallback
-                    return self.vision_annotate(data_url, prompt)
-                else:
-                    # Other error - return error, don't fallback
-                    error_msg = f"[ERROR] Groq vision annotation failed: {e}"
+        try:
+            print(f"📸 [ANNOTATION] Using Groq for image annotation...")
+            result = groq_client.vision_annotate(data_url, prompt)
+            return result
+        except Exception as e:
+            error_str = str(e)
+            
+            # Check if it's a rate limit error (429)
+            if "429" in error_str or "too many" in error_str.lower():
+                print(f"\n⚠️  [RATE LIMIT] HTTP 429 from Groq. Waiting 20 seconds...")
+                self.rate_limit_errors += 1
+                time.sleep(20)
+                print(f"✅ [RETRY] Retrying Groq after cooldown...\n")
+                # Retry Groq (no fallback)
+                try:
+                    result = groq_client.vision_annotate(data_url, prompt)
+                    return result
+                except Exception as retry_error:
+                    error_msg = f"[ERROR] Groq vision annotation failed after retry: {retry_error}"
                     print(error_msg)
                     return error_msg
+            else:
+                # Other error - return error
+                error_msg = f"[ERROR] Groq vision annotation failed: {e}"
+                print(error_msg)
+                return error_msg
     
     def text_annotate(self, prompt: str) -> str:
         """
-        Generate table annotation with fallback mechanism.
+        Generate table annotation using Groq with retry on rate limit.
         
-        Primary: Groq text
-        Fallback: Sumopod (GPT-4o-mini) text when Groq rate-limited
+        If 429 error: Wait 20 seconds, then retry Groq (no fallback)
         """
-        # Check if we should switch back to Groq
-        self._check_fallback_timeout()
-        
-        if self.using_fallback:
-            # Use Sumopod (GPT-4o-mini)
-            try:
-                print(f"📋 [ANNOTATION] Using Sumopod (GPT-4o-mini) for table annotation...")
-                result = azure_openai_client.text_annotate(prompt)
-                return result
-            except Exception as e:
-                error_msg = f"[ERROR] Sumopod text annotation failed: {e}"
-                print(error_msg)
-                return error_msg
-        else:
-            # Try Groq first (primary)
-            try:
-                print(f"📋 [ANNOTATION] Using Groq for table annotation...")
-                result = groq_client.text_annotate(prompt)
-                return result
-            except Exception as e:
-                error_str = str(e)
-                
-                # Check if it's a rate limit error (429) - ONLY THEN fallback
-                if "429" in error_str or "too many" in error_str.lower():
-                    self._activate_fallback()
-                    # Recursively call to use fallback
-                    return self.text_annotate(prompt)
-                else:
-                    # Other error - return error, don't fallback
-                    error_msg = f"[ERROR] Groq text annotation failed: {e}"
+        try:
+            print(f"📋 [ANNOTATION] Using Groq for table annotation...")
+            result = groq_client.text_annotate(prompt)
+            return result
+        except Exception as e:
+            error_str = str(e)
+            
+            # Check if it's a rate limit error (429)
+            if "429" in error_str or "too many" in error_str.lower():
+                print(f"\n⚠️  [RATE LIMIT] HTTP 429 from Groq. Waiting 20 seconds...")
+                self.rate_limit_errors += 1
+                time.sleep(20)
+                print(f"✅ [RETRY] Retrying Groq after cooldown...\n")
+                # Retry Groq (no fallback)
+                try:
+                    result = groq_client.text_annotate(prompt)
+                    return result
+                except Exception as retry_error:
+                    error_msg = f"[ERROR] Groq text annotation failed after retry: {retry_error}"
                     print(error_msg)
                     return error_msg
+            else:
+                # Other error - return error
+                error_msg = f"[ERROR] Groq text annotation failed: {e}"
+                print(error_msg)
+                return error_msg
     
     def get_status(self) -> dict:
         """Get current annotation client status"""
         return {
-            "using_fallback": self.using_fallback,
-            "fallback_start_time": self.fallback_start_time,
             "rate_limit_errors": self.rate_limit_errors,
-            "current_client": "Sumopod (GPT-4o-mini)" if self.using_fallback else "Groq",
-            "fallback_cooldown": self.fallback_cooldown
+            "current_client": "Groq (with retry on 429)"
         }
 
 
