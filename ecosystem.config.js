@@ -17,7 +17,7 @@ module.exports = {
         },
         {
             name: "flower",
-            script: ".",
+            script: "./start_flower.sh",
             interpreter: "bash",
             instances: 1,
             exec_mode: "fork",
@@ -26,7 +26,6 @@ module.exports = {
             error_file: "./logs/flower-error.log",
             out_file: "./logs/flower-out.log",
             log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-            args: "-c 'celery -A app.celery_app flower --port=5555'",
             env: {
                 "PYTHONUNBUFFERED": "1"
             }
