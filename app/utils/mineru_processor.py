@@ -9,7 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
 from app.config import Config
-from app.utils.openai_client import groq_client
+from app.utils.openai_client import azure_openai_client  # Sumopod (gpt-4o-mini with vision)
 
 
 class MinerUProcessor:
@@ -80,17 +80,17 @@ class MinerUProcessor:
         return f"data:image/{ext};base64,{b64}"
     
     def groq_vision_annotate(self, img_path: Path, prompt: str) -> str:
-        """Generate image annotation using Groq vision"""
+        """Generate image annotation using Sumopod (gpt-4o-mini) vision"""
         try:
             data_url = self.img_to_data_url(img_path)
-            return groq_client.vision_annotate(data_url, prompt)
+            return azure_openai_client.vision_annotate(data_url, prompt)
         except Exception as e:
             return f"[ERROR image annotation] {e}"
     
     def groq_text_annotate(self, prompt: str) -> str:
-        """Generate table annotation using Groq text"""
+        """Generate table annotation using Sumopod (gpt-4o-mini) text"""
         try:
-            return groq_client.text_annotate(prompt)
+            return azure_openai_client.text_annotate(prompt)
         except Exception as e:
             return f"[ERROR table annotation] {e}"
     
@@ -107,7 +107,6 @@ class MinerUProcessor:
         if img_dir.exists():
             for img in sorted(img_dir.glob("*")):
                 if img.is_file() and img.suffix.lower() in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"]:
-                    time.sleep(5)  # Prevent Groq API rate limiting (429 errors) - 5 sec minimum
                     desc = self.groq_vision_annotate(img, self.IMG_PROMPT)
                     # Clean the annotation text
                     desc = TextProcessor.clean_text(desc)
@@ -117,7 +116,6 @@ class MinerUProcessor:
         if tbl_dir.exists():
             for tbl in sorted(tbl_dir.glob("*")):
                 if tbl.is_file() and tbl.suffix.lower() in [".json", ".md", ".markdown"]:
-                    time.sleep(5)  
                     if tbl.suffix.lower() == ".json":
                         try:
                             j = json.loads(tbl.read_text(encoding="utf-8", errors="ignore"))

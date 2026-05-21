@@ -32,7 +32,7 @@ class EmbeddingClient:
 
 
 class SumopodClient:
-    """Client for Sumopod Chat Completion"""
+    """Client for Sumopod Chat Completion (gpt-4o-mini with vision)"""
     
     def __init__(self):
         self.client = OpenAI(
@@ -50,6 +50,32 @@ class SumopodClient:
             top_p=top_p
         )
         return response.choices[0].message.content
+    
+    def vision_annotate(self, data_url, prompt, temperature=0.2, max_tokens=450):
+        """Generate annotation using vision model (gpt-4o-mini has vision)"""
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}}
+                ]
+            }],
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return response.choices[0].message.content.strip()
+    
+    def text_annotate(self, prompt, temperature=0.2, max_tokens=600):
+        """Generate annotation using text model"""
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return response.choices[0].message.content.strip()
 
 
 # Legacy Azure OpenAI Client (commented out, kept for reference)
