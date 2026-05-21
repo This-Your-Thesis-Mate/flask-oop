@@ -73,16 +73,16 @@ class AnnotationClient:
             except Exception as e:
                 error_str = str(e)
                 
-                # Check if it's a rate limit error (429)
+                # Check if it's a rate limit error (429) - ONLY THEN fallback
                 if "429" in error_str or "too many" in error_str.lower():
                     self._activate_fallback()
                     # Recursively call to use fallback
                     return self.vision_annotate(data_url, prompt)
                 else:
-                    # Other error - try fallback anyway
-                    print(f"\n⚠️  [ANNOTATION] Groq error: {e}. Trying fallback...")
-                    self._activate_fallback()
-                    return self.vision_annotate(data_url, prompt)
+                    # Other error - return error, don't fallback
+                    error_msg = f"[ERROR] Groq vision annotation failed: {e}"
+                    print(error_msg)
+                    return error_msg
     
     def text_annotate(self, prompt: str) -> str:
         """
@@ -113,16 +113,16 @@ class AnnotationClient:
             except Exception as e:
                 error_str = str(e)
                 
-                # Check if it's a rate limit error (429)
+                # Check if it's a rate limit error (429) - ONLY THEN fallback
                 if "429" in error_str or "too many" in error_str.lower():
                     self._activate_fallback()
                     # Recursively call to use fallback
                     return self.text_annotate(prompt)
                 else:
-                    # Other error - try fallback anyway
-                    print(f"\n⚠️  [ANNOTATION] Groq error: {e}. Trying fallback...")
-                    self._activate_fallback()
-                    return self.text_annotate(prompt)
+                    # Other error - return error, don't fallback
+                    error_msg = f"[ERROR] Groq text annotation failed: {e}"
+                    print(error_msg)
+                    return error_msg
     
     def get_status(self) -> dict:
         """Get current annotation client status"""
