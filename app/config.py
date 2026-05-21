@@ -59,6 +59,11 @@ class Config:
     # Output Directory Config
     EXTRACTED_TEXTS_DIR = os.getenv("EXTRACTED_TEXTS_DIR", "extracted_texts")
     
+    # Redis Config
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+    
     @staticmethod
     def get_db_connection_string():
         """Get database connection string"""

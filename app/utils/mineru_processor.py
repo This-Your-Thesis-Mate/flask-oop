@@ -107,6 +107,7 @@ class MinerUProcessor:
         if img_dir.exists():
             for img in sorted(img_dir.glob("*")):
                 if img.is_file() and img.suffix.lower() in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"]:
+                    time.sleep(5)  # Prevent Groq API rate limiting (429 errors) - 5 sec minimum
                     desc = self.groq_vision_annotate(img, self.IMG_PROMPT)
                     # Clean the annotation text
                     desc = TextProcessor.clean_text(desc)
@@ -116,6 +117,7 @@ class MinerUProcessor:
         if tbl_dir.exists():
             for tbl in sorted(tbl_dir.glob("*")):
                 if tbl.is_file() and tbl.suffix.lower() in [".json", ".md", ".markdown"]:
+                    time.sleep(5)  
                     if tbl.suffix.lower() == ".json":
                         try:
                             j = json.loads(tbl.read_text(encoding="utf-8", errors="ignore"))
