@@ -381,7 +381,10 @@ class MinerUProcessor:
                             break
                         elif state == "failed":
                             error_msg = item.get("message", "Unknown error")
-                            raise RuntimeError(f"MinerU extraction failed: {error_msg}")
+                            error_code = item.get("code")
+                            print(f"[MinerU] FULL ERROR RESPONSE: {item}")
+                            print(f"[MinerU] Error message: {error_msg}, Code: {error_code}")
+                            raise RuntimeError(f"MinerU extraction failed: {error_msg} (Code: {error_code})")
                     
                     retry_count += 1
                     time.sleep(5)
