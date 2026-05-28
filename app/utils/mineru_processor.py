@@ -9,7 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pathlib import Path
 from app.config import Config
-from app.utils.openai_client import groq_client
+from app.utils.openai_client import azure_openai_client
 
 
 class MinerUProcessor:
@@ -56,9 +56,9 @@ class MinerUProcessor:
         self.session.mount("https://", adapter)
         
         # Increased timeouts for large files
-        self.upload_timeout = 300  # 5 minutes for upload
-        self.api_timeout = 60  # 1 minute for API calls
-        self.download_timeout = 600  # 10 minutes for downloads
+        self.upload_timeout = 100 
+        self.api_timeout = 60  
+        self.download_timeout = 100 
     
     @staticmethod
     def safe_read_text(path: Path, max_chars: int = 8000) -> str:
@@ -80,17 +80,17 @@ class MinerUProcessor:
         return f"data:image/{ext};base64,{b64}"
     
     def groq_vision_annotate(self, img_path: Path, prompt: str) -> str:
-        """Generate image annotation using Groq vision"""
+        """Generate image annotation using Azure OpenAI vision"""
         try:
             data_url = self.img_to_data_url(img_path)
-            return groq_client.vision_annotate(data_url, prompt)
+            return azure_openai_client.vision_annotate(data_url, prompt)
         except Exception as e:
             return f"[ERROR image annotation] {e}"
     
     def groq_text_annotate(self, prompt: str) -> str:
-        """Generate table annotation using Groq text"""
+        """Generate table annotation using Azure OpenAI text"""
         try:
-            return groq_client.text_annotate(prompt)
+            return azure_openai_client.text_annotate(prompt)
         except Exception as e:
             return f"[ERROR table annotation] {e}"
     

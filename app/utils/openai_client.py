@@ -1,8 +1,7 @@
 import requests
 import json
 from openai import OpenAI
-# from openai import AzureOpenAI  # Legacy Azure OpenAI import
-from groq import Groq
+from openai import AzureOpenAI
 from app.config import Config
 
 
@@ -52,41 +51,32 @@ class SumopodClient:
         return response.choices[0].message.content
 
 
-# Legacy Azure OpenAI Client (commented out, kept for reference)
-# class AzureOpenAIClient:
-#     """Client for Azure OpenAI Chat Completion"""
-#     
-#     def __init__(self):
-#         self.client = AzureOpenAI(
-#             api_key=Config.AZURE_OPENAI_KEY,
-#             api_version=Config.AZURE_OPENAI_API_VERSION,
-#             azure_endpoint=Config.AZURE_OPENAI_ENDPOINT
-#         )
-#         self.deployment_name = Config.AZURE_OPENAI_DEPLOYMENT
-#     
-#     def generate_completion(self, messages, temperature=0.2, top_p=0.95):
-#         """Generate chat completion"""
-#         response = self.client.chat.completions.create(
-#             model=self.deployment_name,
-#             messages=messages,
-#             temperature=temperature,
-#             top_p=top_p
-#         )
-#         return response.choices[0].message.content
-
-
-class GroqClient:
-    """Client for Groq AI"""
+class AzureOpenAIClient:
+    """Client for Azure OpenAI Chat Completion"""
     
     def __init__(self):
-        self.client = Groq(api_key=Config.GROQ_API_KEY)
-        self.vision_model = Config.GROQ_VISION_MODEL
-        self.text_model = Config.GROQ_TEXT_MODEL
+        self.client = AzureOpenAI(
+            api_version=Config.AZURE_OPENAI_API_VERSION,
+            azure_endpoint=Config.AZURE_OPENAI_ENDPOINT,
+            api_key=Config.AZURE_OPENAI_KEY,
+        )
+        self.deployment_name = Config.AZURE_OPENAI_DEPLOYMENT
+    
+    def generate_completion(self, messages, temperature=0.2, top_p=0.95, max_tokens=16384):
+        """Generate chat completion"""
+        response = self.client.chat.completions.create(
+            model=self.deployment_name,
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_completion_tokens=max_tokens
+        )
+        return response.choices[0].message.content
     
     def vision_annotate(self, data_url, prompt, temperature=0.2, max_tokens=450):
         """Generate annotation using vision model"""
         resp = self.client.chat.completions.create(
-            model=self.vision_model,
+            model=self.deployment_name,
             messages=[{
                 "role": "user",
                 "content": [
@@ -95,22 +85,21 @@ class GroqClient:
                 ]
             }],
             temperature=temperature,
-            max_tokens=max_tokens,
+            max_completion_tokens=max_tokens,
         )
         return resp.choices[0].message.content.strip()
     
     def text_annotate(self, prompt, temperature=0.2, max_tokens=600):
         """Generate annotation using text model"""
         resp = self.client.chat.completions.create(
-            model=self.text_model,
+            model=self.deployment_name,
             messages=[{"role": "user", "content": prompt}],
             temperature=temperature,
-            max_tokens=max_tokens,
+            max_completion_tokens=max_tokens,
         )
         return resp.choices[0].message.content.strip()
 
 
 # Singleton instances
 embedding_client = EmbeddingClient()
-azure_openai_client = SumopodClient()  # Aliased for backward compatibility
-groq_client = GroqClient()
+azure_openai_client = AzureOpenAIClient()

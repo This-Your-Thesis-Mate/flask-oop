@@ -21,21 +21,16 @@ class Config:
     MINERU_ENABLE_FORMULA = os.getenv("MINERU_ENABLE_FORMULA", "True") == "True"
     MINERU_IS_OCR = os.getenv("MINERU_IS_OCR", "True") == "True"
     
-    # Groq Config
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
-    GROQ_TEXT_MODEL = os.getenv("GROQ_TEXT_MODEL", "llama-3.3-70b-versatile")
+    # Azure OpenAI Config
+    AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
+    AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+    AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-5-mini")
+    AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
     
-    # Sumopod Config
-    SUMOPOD_API_KEY = os.getenv("SUMOPOD_API_KEY")
-    SUMOPOD_BASE_URL = os.getenv("SUMOPOD_BASE_URL", "https://ai.sumopod.com/v1")
-    SUMOPOD_MODEL = os.getenv("SUMOPOD_MODEL", "gpt-4o-mini")
-    
-    # Legacy Azure OpenAI Config (commented out, kept for reference)
-    # AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
-    # AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-    # AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "classroom-4o")
-    # AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01")
+    # Sumopod Config (legacy, kept for reference)
+    # SUMOPOD_API_KEY = os.getenv("SUMOPOD_API_KEY")
+    # SUMOPOD_BASE_URL = os.getenv("SUMOPOD_BASE_URL", "https://ai.sumopod.com/v1")
+    # SUMOPOD_MODEL = os.getenv("SUMOPOD_MODEL", "gpt-4o-mini")
     
     # Azure Embedding Config
     AZURE_EMBEDDING_URL = os.getenv("AZURE_EMBEDDING_URL")
