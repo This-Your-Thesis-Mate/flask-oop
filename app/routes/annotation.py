@@ -38,6 +38,12 @@ class AnnotationHandler(BaseRouteHandler):
         
         try:
             result = annotation_service.generate_annotations(course_id, ref_module_id, tenant_id)
+            
+            # Check if LLM generation is disabled (chunks only mode)
+            if result.get("mode") == "chunks_only":
+                return AnnotationHandler.success_response(result.get('data'), 'Chunks retrieved. LLM generation is disabled.', 200)
+            
+            # Normal mode with LLM generation
             return AnnotationHandler.success_response(result.get('data'), 'Annotations generated successfully.', 200)
         except Exception as e:
             status = 404 if 'not found' in str(e).lower() else 500

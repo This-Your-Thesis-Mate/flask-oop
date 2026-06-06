@@ -5,10 +5,45 @@ import traceback
 from app.repositories import vector_repository
 from app.utils import embedding_client, azure_openai_client, quiz_parser
 from app.utils.prompts import ROLE_PROMPT, get_quiz_prompt
+from app.config import Config
 
 
 class QuizService:
     """Service for quiz generation"""
+    
+    @staticmethod
+    def _format_quiz_search_results(data, query_text, course_id, module_id):
+        """
+        Format similarity search results for quiz without LLM generation
+        
+        Args:
+            data: List of tuples (text, similarity_score)
+            query_text: Query text
+            course_id: Course ID
+            module_id: Module ID
+        
+        Returns:
+            dict: Formatted results with chunks and metadata
+        """
+        formatted_chunks = []
+        for i, (text, score) in enumerate(data, 1):
+            formatted_chunks.append({
+                "id": i,
+                "content": text.strip(),
+                "similarity_score": float(score)
+            })
+        
+        return {
+            "mode": "similarity_search_only",
+            "request": {
+                "query": query_text,
+                "course_id": course_id,
+                "module_id": module_id
+            },
+            "total_chunks": len(formatted_chunks),
+            "chunks": formatted_chunks,
+            "note": "Quiz LLM generation is disabled. Results show raw similarity search output only."
+        }
     
     @staticmethod
     def generate_quiz(query_text, course_id, module_id, question_type, number_of_question, tenant_id, threshold=0.4, limit=5):
@@ -51,6 +86,11 @@ class QuizService:
             if not data:
                 return None
             
+            # Check if LLM generation is disabled - return only similarity search results
+            if not Config.RAG_ENABLE_LLM_GENERATION:
+                print("[QUIZ] LLM generation disabled - returning similarity search results only")
+                return QuizService._format_quiz_search_results(data, query_text, course_id, module_id)
+            
             # 3. Combine retrieved texts
             combined_string = "".join([row[0] for row in data])
             
@@ -77,6 +117,7 @@ class QuizService:
                     temperature=0,
                     top_p=0.95
                 )
+                __import__('time').sleep(2)
                 
                 result_keseluruhan += "\n" + response
             

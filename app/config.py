@@ -54,6 +54,12 @@ class Config:
     # Output Directory Config
     EXTRACTED_TEXTS_DIR = os.getenv("EXTRACTED_TEXTS_DIR", "extracted_texts")
     
+    # RAG Config
+    RAG_ENABLE_LLM_GENERATION = os.getenv("RAG_ENABLE_LLM_GENERATION", "True") == "True"
+    
+    # Temperature calibration value (model-specific parameter)
+    temperature = int(os.getenv("temperature", "0"))
+    
     @staticmethod
     def get_db_connection_string():
         """Get database connection string"""

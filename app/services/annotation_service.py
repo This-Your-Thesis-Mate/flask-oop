@@ -4,6 +4,7 @@ Annotation service for managing document annotations
 import traceback
 from app.repositories import module_repository, chunk_repository, annotation_repository
 from app.utils import annotation_helper
+from app.config import Config
 
 
 class AnnotationService:
@@ -39,6 +40,29 @@ class AnnotationService:
             
             # Extract text from chunks
             chunks = [row[0] for row in chunks_data]
+            
+            # Check if LLM generation is disabled - return only chunk data without annotation generation
+            if not Config.RAG_ENABLE_LLM_GENERATION:
+                print("[ANNOTATION] LLM generation disabled - returning chunks without generating annotations")
+                formatted_chunks = []
+                for i, chunk_text in enumerate(chunks, 1):
+                    formatted_chunks.append({
+                        "id": i,
+                        "content": chunk_text.strip() if chunk_text else ""
+                    })
+                
+                return {
+                    "mode": "chunks_only",
+                    "data": {
+                        "modul_name": module_name,
+                        "course_id": course_id,
+                        "course_name": course_name,
+                        "modul_id": ref_module_id,
+                        "total_chunks": len(formatted_chunks),
+                        "chunks": formatted_chunks,
+                        "note": "Annotation LLM generation is disabled. Results show raw chunks only."
+                    }
+                }
             
             # 3. Generate annotations from chunks
             annotations = annotation_helper.create_annotations_from_chunks(

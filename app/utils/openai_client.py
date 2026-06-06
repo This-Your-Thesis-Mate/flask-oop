@@ -64,17 +64,17 @@ class AzureOpenAIClient:
     
     def generate_completion(self, messages, temperature=0.2, top_p=0.95, max_tokens=16384):
         """Generate chat completion"""
+        # Note: Azure OpenAI model only supports default temperature (1), so we don't pass temperature/top_p
         response = self.client.chat.completions.create(
             model=self.deployment_name,
             messages=messages,
-            temperature=temperature,
-            top_p=top_p,
             max_completion_tokens=max_tokens
         )
         return response.choices[0].message.content
     
     def vision_annotate(self, data_url, prompt, temperature=0.2, max_tokens=450):
         """Generate annotation using vision model"""
+        # Note: Azure OpenAI model only supports default temperature (1), so we don't pass temperature
         resp = self.client.chat.completions.create(
             model=self.deployment_name,
             messages=[{
@@ -84,17 +84,16 @@ class AzureOpenAIClient:
                     {"type": "image_url", "image_url": {"url": data_url}}
                 ]
             }],
-            temperature=temperature,
             max_completion_tokens=max_tokens,
         )
         return resp.choices[0].message.content.strip()
     
     def text_annotate(self, prompt, temperature=0.2, max_tokens=600):
         """Generate annotation using text model"""
+        # Note: Azure OpenAI model only supports default temperature (1), so we don't pass temperature
         resp = self.client.chat.completions.create(
             model=self.deployment_name,
             messages=[{"role": "user", "content": prompt}],
-            temperature=temperature,
             max_completion_tokens=max_tokens,
         )
         return resp.choices[0].message.content.strip()

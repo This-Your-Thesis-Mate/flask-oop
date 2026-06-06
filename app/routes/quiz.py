@@ -53,6 +53,11 @@ class QuizHandler(BaseRouteHandler):
             if result is None:
                 return QuizHandler.not_found_response('The document is not available.')
             
+            # Check if LLM generation is disabled (similarity search only mode)
+            if result.get("mode") == "similarity_search_only":
+                # Return raw chunks without parsing
+                return QuizHandler.success_response(result, 'Similarity search completed. LLM generation is disabled.', 200)
+            
             # Filter out empty or invalid questions
             parsed_questions = result.get("parsed", [])
             valid_questions = [

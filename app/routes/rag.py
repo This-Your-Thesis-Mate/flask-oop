@@ -43,6 +43,12 @@ class RAGHandler(BaseRouteHandler):
                 limit=limit,
                 messages=messages
             )
+            
+            # Check if LLM generation is disabled
+            if isinstance(result, dict) and result.get("mode") == "similarity_search_only":
+                return RAGHandler.success_response(result, 'Similarity search completed. LLM generation is disabled.', 200)
+            
+            # Normal mode with LLM generation
             return RAGHandler.success_response(result, 'Chat response generated successfully.', 200)
         except Exception as e:
             return RAGHandler.error_response(str(e), 500)

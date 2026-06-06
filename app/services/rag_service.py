@@ -1,8 +1,10 @@
 import traceback
 import re
+import json
 from app.repositories import vector_repository
 from app.utils import embedding_client, azure_openai_client
 from app.utils.prompts import get_chat_prompt
+from app.config import Config
 
 
 def detect_language(text):
@@ -98,6 +100,32 @@ class RAGService:
             text = text.replace('\n\n\n', '\n\n')
         
         return text
+    
+    @staticmethod
+    def _format_similarity_search_results(data):
+        """
+        Format similarity search results for response without LLM generation
+        
+        Args:
+            data: List of tuples (text, similarity_score)
+        
+        Returns:
+            dict: Formatted results with chunks and scores
+        """
+        formatted_chunks = []
+        for i, (text, score) in enumerate(data, 1):
+            formatted_chunks.append({
+                "id": i,
+                "content": text.strip(),
+                "similarity_score": float(score)
+            })
+        
+        return {
+            "mode": "similarity_search_only",
+            "total_chunks": len(formatted_chunks),
+            "chunks": formatted_chunks,
+            "note": "RAG LLM generation is disabled. Results show raw similarity search output only."
+        }
     
     @staticmethod
     def _generate_summary(combined_text, detected_lang):
@@ -214,6 +242,7 @@ IMPORTANT:
             temperature=0.2,
             top_p=0.9
         )
+        __import__('time').sleep(2)
         
         # Clean the output
         cleaned_result = RAGService._clean_llm_output(result)
@@ -337,6 +366,13 @@ IMPORTANT:
                         "message": error_message
                     }
                 
+                # Check if LLM generation is disabled - return only similarity search results
+                if not Config.RAG_ENABLE_LLM_GENERATION:
+                    print("[RAG] LLM generation disabled - returning summary request results without generation")
+                    results = RAGService._format_similarity_search_results(data)
+                    results["request_type"] = "summary"
+                    return results
+                
                 # Combine retrieved texts with clear separators
                 combined_text = "\n\n--- BAGIAN DOKUMEN ---\n\n".join(
                     [row[0].strip() for row in data if row[0] and row[0].strip()]
@@ -421,7 +457,12 @@ IMPORTANT:
                     "message": error_message
                 }
             
-            print("[RAG] Validation passed - generating response")
+            # Check if LLM generation is disabled - return only similarity search results
+            if not Config.RAG_ENABLE_LLM_GENERATION:
+                print("[RAG] LLM generation disabled - returning similarity search results only")
+                return RAGService._format_similarity_search_results(data)
+            
+            print("[RAG] Validation passed - generating response with LLM")
             
             # 3. Combine retrieved texts with clear separators
             combined_string = "\n\n--- BAGIAN DOKUMEN ---\n\n".join(
