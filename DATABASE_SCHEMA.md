@@ -11,7 +11,7 @@ CREATE TABLE modules (
   course_id    integer NOT NULL,
   course_name  text NOT NULL,
   ref_module_id integer NOT NULL,
-  tenant_id    integer NOT NULL,
+  siteidentifier    varchar NOT NULL,
   created_at   timestamptz DEFAULT now()
 );
 
@@ -22,7 +22,7 @@ CREATE TABLE chunks (
   id          bigserial PRIMARY KEY,
   module_id   bigint NOT NULL,
   chunk_text  text NOT NULL,
-  tenant_id   integer NOT NULL,
+  siteidentifier   varchar NOT NULL,
 
   CONSTRAINT fk_chunks_module
     FOREIGN KEY (module_id)
@@ -37,7 +37,7 @@ CREATE TABLE tbl_vector (
   id         bigserial PRIMARY KEY,
   embedding  vector(3072) NOT NULL,
   chunk_id   bigint NOT NULL,
-  tenant_id  integer NOT NULL,
+  siteidentifier  varchar NOT NULL,
 
   CONSTRAINT fk_vector_chunk
     FOREIGN KEY (chunk_id)
@@ -53,7 +53,7 @@ CREATE TABLE module_annotations (
   module_id    bigint NOT NULL,
   page_number  integer NOT NULL CHECK (page_number > 0),
   text         text NOT NULL,
-  tenant_id    integer NOT NULL,
+  siteidentifier    varchar NOT NULL,
 
   CONSTRAINT fk_annotations_module
     FOREIGN KEY (module_id)

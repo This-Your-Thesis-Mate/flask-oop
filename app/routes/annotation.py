@@ -16,7 +16,7 @@ class AnnotationHandler(BaseRouteHandler):
         JSON body or form data:
             - course_id: Course ID
             - module_id: User's module ID
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
         
         Returns:
             JSON response with annotations
@@ -25,19 +25,19 @@ class AnnotationHandler(BaseRouteHandler):
         if request.is_json:
             course_id = request.json.get('course_id')
             ref_module_id = request.json.get('module_id')
-            tenant_id = request.json.get('tenant_id')
+            siteidentifier = request.json.get('siteidentifier')
         else:
             course_id = request.form.get('course_id')
             ref_module_id = request.form.get('module_id')
-            tenant_id = request.form.get('tenant_id')
+            siteidentifier = request.form.get('siteidentifier')
         
         if not course_id or not ref_module_id:
             return AnnotationHandler.error_response('course_id and module_id are required', 400)
-        if not tenant_id:
-            return AnnotationHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return AnnotationHandler.error_response('siteidentifier is required', 400)
         
         try:
-            result = annotation_service.generate_annotations(course_id, ref_module_id, tenant_id)
+            result = annotation_service.generate_annotations(course_id, ref_module_id, siteidentifier)
             
             # Check if LLM generation is disabled (chunks only mode)
             if result.get("mode") == "chunks_only":
@@ -57,22 +57,22 @@ class AnnotationHandler(BaseRouteHandler):
         Query params:
             - course_id: Course ID
             - module_id: User's module ID
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
         
         Returns:
             JSON response with annotations
         """
         course_id = request.args.get('course_id')
         ref_module_id = request.args.get('module_id')
-        tenant_id = request.args.get('tenant_id')
+        siteidentifier = request.args.get('siteidentifier')
         
         if not course_id or not ref_module_id:
             return AnnotationHandler.error_response('course_id and module_id are required', 400)
-        if not tenant_id:
-            return AnnotationHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return AnnotationHandler.error_response('siteidentifier is required', 400)
         
         try:
-            result = annotation_service.get_annotations(course_id, ref_module_id, tenant_id)
+            result = annotation_service.get_annotations(course_id, ref_module_id, siteidentifier)
             return AnnotationHandler.success_response(result.get('data'), 'Annotations retrieved successfully.', 200)
         except Exception as e:
             status = 404 if 'not found' in str(e).lower() else 500
@@ -86,17 +86,17 @@ class AnnotationHandler(BaseRouteHandler):
         Query params:
             - course_id: Course ID (optional - if not provided, get all modules)
             - modul_id: Module ID (optional - if provided, get specific module)
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
         
         Returns:
             JSON response with list of modules and their annotation counts
         """
         course_id = request.args.get('course_id')
         modul_id = request.args.get('modul_id')
-        tenant_id = request.args.get('tenant_id')
+        siteidentifier = request.args.get('siteidentifier')
         
-        if not tenant_id:
-            return AnnotationHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return AnnotationHandler.error_response('siteidentifier is required', 400)
         
         # Convert to int if provided
         if course_id:
@@ -112,7 +112,7 @@ class AnnotationHandler(BaseRouteHandler):
                 return AnnotationHandler.error_response('Invalid modul_id format', 400)
         
         try:
-            result = annotation_service.get_annotations_list(course_id, modul_id, tenant_id)
+            result = annotation_service.get_annotations_list(course_id, modul_id, siteidentifier)
             return AnnotationHandler.success_response(result.get('data'), 'Annotations list retrieved successfully', 200)
         except Exception as e:
             return AnnotationHandler.error_response(str(e), 500)

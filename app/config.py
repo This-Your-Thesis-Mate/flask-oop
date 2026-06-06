@@ -6,8 +6,6 @@ if ENVIRONMENT == "development":
     load_dotenv()
 
 class Config:
-    """Configuration class for Flask application"""
-    
     # Flask Config
     DEBUG = os.getenv("DEBUG", "True") == "True"
     HOST = os.getenv("HOST", "0.0.0.0")
@@ -26,11 +24,6 @@ class Config:
     AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
     AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-5-mini")
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
-    
-    # Sumopod Config (legacy, kept for reference)
-    # SUMOPOD_API_KEY = os.getenv("SUMOPOD_API_KEY")
-    # SUMOPOD_BASE_URL = os.getenv("SUMOPOD_BASE_URL", "https://ai.sumopod.com/v1")
-    # SUMOPOD_MODEL = os.getenv("SUMOPOD_MODEL", "gpt-4o-mini")
     
     # Azure Embedding Config
     AZURE_EMBEDDING_URL = os.getenv("AZURE_EMBEDDING_URL")
@@ -53,12 +46,6 @@ class Config:
     
     # Output Directory Config
     EXTRACTED_TEXTS_DIR = os.getenv("EXTRACTED_TEXTS_DIR", "extracted_texts")
-    
-    # RAG Config
-    RAG_ENABLE_LLM_GENERATION = os.getenv("RAG_ENABLE_LLM_GENERATION", "True") == "True"
-    
-    # Temperature calibration value (model-specific parameter)
-    temperature = int(os.getenv("temperature", "0"))
     
     @staticmethod
     def get_db_connection_string():

@@ -18,7 +18,7 @@ class TTSHandler(BaseRouteHandler):
             - module_id: Module ID to convert
         
         JSON body (optional):
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
             - language: Language code (default 'id' for Indonesian)
             - slow: Speak slowly (default False)
             - output_dir: Directory to save MP3 files (optional, if not provided returns base64)
@@ -26,18 +26,18 @@ class TTSHandler(BaseRouteHandler):
         Returns:
             JSON response with conversion results
         """
-        tenant_id = request.json.get('tenant_id') if request.json else None
+        siteidentifier = request.json.get('siteidentifier') if request.json else None
         language = request.json.get('language', 'id') if request.json else 'id'
         slow = request.json.get('slow', False) if request.json else False
         output_dir = request.json.get('output_dir') if request.json else None
         
-        if not tenant_id:
-            return TTSHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return TTSHandler.error_response('siteidentifier is required', 400)
         
         try:
             result = tts_service.convert_chunks_to_speech(
                 module_id=module_id,
-                tenant_id=tenant_id,
+                siteidentifier=siteidentifier,
                 language=language,
                 slow=slow,
                 output_dir=output_dir
@@ -64,7 +64,7 @@ class TTSHandler(BaseRouteHandler):
             - chunk_id: Chunk ID to convert
         
         Query parameters (GET) or JSON body (POST):
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
             - language: Language code (default 'id' for Indonesian)
             - slow: Speak slowly (default False)
             - format: Response format - 'file' to download, 'json' for base64 (default 'file')
@@ -73,23 +73,23 @@ class TTSHandler(BaseRouteHandler):
             MP3 audio file or JSON with base64 encoded audio
         """
         if request.method == 'GET':
-            tenant_id = request.args.get('tenant_id')
+            siteidentifier = request.args.get('siteidentifier')
             language = request.args.get('language', 'id')
             slow = request.args.get('slow', 'false').lower() == 'true'
             response_format = request.args.get('format', 'file')
         else:
-            tenant_id = request.json.get('tenant_id') if request.json else None
+            siteidentifier = request.json.get('siteidentifier') if request.json else None
             language = request.json.get('language', 'id') if request.json else 'id'
             slow = request.json.get('slow', False) if request.json else False
             response_format = request.json.get('format', 'file') if request.json else 'file'
         
-        if not tenant_id:
-            return TTSHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return TTSHandler.error_response('siteidentifier is required', 400)
         
         try:
             result = tts_service.convert_single_chunk_to_speech(
                 chunk_id=chunk_id,
-                tenant_id=tenant_id,
+                siteidentifier=siteidentifier,
                 language=language,
                 slow=slow
             )

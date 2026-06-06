@@ -1,6 +1,3 @@
-"""
-Upload service for handling file uploads and processing
-"""
 import tempfile
 import traceback
 from pathlib import Path
@@ -15,7 +12,7 @@ class UploadService:
     """Service for handling file uploads and document processing"""
     
     @staticmethod
-    def process_upload(file, course_id, course_name, ref_module_id, tenant_id):
+    def process_upload(file, course_id, course_name, ref_module_id, siteidentifier):
         """
         Process uploaded file: extract text, chunk, embed, and save
         
@@ -24,7 +21,7 @@ class UploadService:
             course_id: Course ID
             course_name: Course name
             ref_module_id: Reference module ID (user's module ID)
-            tenant_id: Tenant ID
+            siteidentifier: Site Identifier
         
         Returns:
             dict: Processing results
@@ -35,7 +32,7 @@ class UploadService:
         print(f"[UPLOAD] Course ID: {course_id}")
         print(f"[UPLOAD] Course Name: {course_name}")
         print(f"[UPLOAD] Module ID: {ref_module_id}")
-        print(f"[UPLOAD] Tenant ID: {tenant_id}")
+        print(f"[UPLOAD] Site Identifier: {siteidentifier}")
         print(f"{'='*80}\n")
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -105,7 +102,7 @@ class UploadService:
                 
                 # 3. Create module
                 module_name = file.filename
-                module_id = module_repository.create_module(module_name, course_id, course_name, tenant_id, ref_module_id)
+                module_id = module_repository.create_module(module_name, course_id, course_name, siteidentifier, ref_module_id)
                 
                 # 4. Get embeddings for all chunks
                 emb_data = embedding_client.get_embeddings(chunks)
@@ -119,12 +116,12 @@ class UploadService:
                     chunks_data.append((chunk_text, embedding_vec))
                 
                 # 6. Save chunks and embeddings
-                chunk_repository.save_chunks_and_embeddings(module_id, chunks_data, tenant_id)
+                chunk_repository.save_chunks_and_embeddings(module_id, chunks_data, siteidentifier)
                 
                 return {
                     'course_id': course_id,
                     'module_id': module_id,
-                    'tenant_id': tenant_id,
+                    'siteidentifier': siteidentifier,
                     'file': file.filename,
                     'num_chunks': len(chunks),
                     'full_text_saved_to': str(output_path),
@@ -138,5 +135,4 @@ class UploadService:
                 raise Exception(f'Processing failed: {str(e)}')
 
 
-# Singleton instance
 upload_service = UploadService()

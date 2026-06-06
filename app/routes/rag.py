@@ -16,7 +16,7 @@ class RAGHandler(BaseRouteHandler):
         JSON body:
             - prompt: User question
             - course_id: Course ID
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
             - threshold: Similarity threshold (optional, default 0.4)
             - limit: Max chunks to retrieve (optional, default 5)
             - messages: Previous conversation (optional)
@@ -27,18 +27,18 @@ class RAGHandler(BaseRouteHandler):
         threshold = request.json.get('threshold', 0.4)
         limit = request.json.get('limit', 5)
         course_id = request.json.get('course_id')
-        tenant_id = request.json.get('tenant_id')
+        siteidentifier = request.json.get('siteidentifier')
         prompt = request.json.get('prompt')
         messages = request.json.get('messages', [])
         
-        if not tenant_id:
-            return RAGHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return RAGHandler.error_response('siteidentifier is required', 400)
         
         try:
             result = rag_service.chat(
                 prompt=prompt,
                 course_id=course_id,
-                tenant_id=tenant_id,
+                siteidentifier=siteidentifier,
                 threshold=threshold,
                 limit=limit,
                 messages=messages

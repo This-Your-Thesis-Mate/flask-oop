@@ -18,7 +18,7 @@ class UploadHandler(BaseRouteHandler):
             - course_id: Course ID
             - course_name: Course name
             - module_id: User's module ID (ref_module_id)
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
         
         Returns:
             JSON response with processing results
@@ -26,16 +26,16 @@ class UploadHandler(BaseRouteHandler):
         course_id = request.form.get('course_id')
         course_name = request.form.get('course_name')
         ref_module_id = request.form.get('module_id')
-        tenant_id = request.form.get('tenant_id')
+        siteidentifier = request.form.get('siteidentifier')
         file = request.files.get('file')
         
         if not file:
             return UploadHandler.error_response('No file uploaded', 400)
-        if not tenant_id:
-            return UploadHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return UploadHandler.error_response('siteidentifier is required', 400)
         
         try:
-            result = upload_service.process_upload(file, course_id, course_name, ref_module_id, tenant_id)
+            result = upload_service.process_upload(file, course_id, course_name, ref_module_id, siteidentifier)
             return UploadHandler.success_response(result, 'File uploaded and processed successfully.', 200)
         except Exception as e:
             return UploadHandler.error_response(str(e), 500)

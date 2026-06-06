@@ -1,6 +1,3 @@
-"""
-Module service for module management
-"""
 from app.repositories import module_repository
 
 
@@ -8,23 +5,21 @@ class ModuleService:
     """Service for module management"""
     
     @staticmethod
-    def delete_module(module_id, course_id, tenant_id):
+    def delete_module(module_id, course_id, siteidentifier):
         """
         Delete a module and all related data
         
         Args:
             module_id: Module ID
             course_id: Course ID
-            tenant_id: Tenant ID
+            siteidentifier: Site Identifier
         
         Returns:
             bool: True if deleted successfully
         """
-        result = module_repository.delete_module(module_id, course_id, tenant_id)
+        result = module_repository.delete_module(module_id, course_id, siteidentifier)
         if not result:
             raise Exception('Module not found.')
         return True
 
-
-# Singleton instance
 module_service = ModuleService()

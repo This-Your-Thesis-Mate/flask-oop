@@ -1,6 +1,3 @@
-"""
-Database connection manager
-"""
 import psycopg2
 from psycopg2 import pool
 from app.config import Config
@@ -64,6 +61,4 @@ class DatabaseManager:
             cursor.close()
             self.return_connection(conn)
 
-
-# Singleton instance
 db_manager = DatabaseManager()

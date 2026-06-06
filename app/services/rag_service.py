@@ -249,14 +249,14 @@ IMPORTANT:
         return cleaned_result
     
     @staticmethod
-    def chat(prompt, course_id, tenant_id, threshold=0.4, limit=5, messages=None):
+    def chat(prompt, course_id, siteidentifier, threshold=0.4, limit=5, messages=None):
         """
         Chat with RAG: retrieve relevant chunks and generate response
         
         Args:
             prompt: User question/prompt
             course_id: Course ID to search within
-            tenant_id: Tenant ID for data isolation (REQUIRED)
+            siteidentifier: Site Identifier for data isolation (REQUIRED)
             threshold: Similarity threshold (default 0.4)
             limit: Maximum number of chunks to retrieve (default 5)
             messages: Previous conversation messages (default None)
@@ -264,9 +264,9 @@ IMPORTANT:
         Returns:
             dict: Response with generated message
         """
-        # Validate tenant_id is provided
-        if not tenant_id:
-            raise Exception("tenant_id is required for data isolation")
+        # Validate siteidentifier is provided
+        if not siteidentifier:
+            raise Exception("siteidentifier is required for data isolation")
         
         if messages is None:
             messages = []
@@ -312,7 +312,7 @@ IMPORTANT:
                 validation_data = vector_repository.similarity_search(
                     query_embedding=query_embedding,
                     course_id=course_id,
-                    tenant_id=tenant_id,
+                    siteidentifier=siteidentifier,
                     threshold=0.35, 
                     limit=3
                 )
@@ -350,7 +350,7 @@ IMPORTANT:
                 data = vector_repository.similarity_search(
                     query_embedding=query_embedding,
                     course_id=course_id,
-                    tenant_id=tenant_id,
+                    siteidentifier=siteidentifier,
                     threshold=0.3, 
                     limit=30
                 )
@@ -365,13 +365,6 @@ IMPORTANT:
                     return {
                         "message": error_message
                     }
-                
-                # Check if LLM generation is disabled - return only similarity search results
-                if not Config.RAG_ENABLE_LLM_GENERATION:
-                    print("[RAG] LLM generation disabled - returning summary request results without generation")
-                    results = RAGService._format_similarity_search_results(data)
-                    results["request_type"] = "summary"
-                    return results
                 
                 # Combine retrieved texts with clear separators
                 combined_text = "\n\n--- BAGIAN DOKUMEN ---\n\n".join(
@@ -414,13 +407,13 @@ IMPORTANT:
 
             query_embedding = embedding_client.get_embedding(embedding_prompt)
             
-            print(f"[RAG] Searching with - Course ID: {course_id}, Tenant ID: {tenant_id}, Threshold: {threshold}, Limit: {limit}")
+            print(f"[RAG] Searching with - Course ID: {course_id}, Site Identifier: {siteidentifier}, Threshold: {threshold}, Limit: {limit}")
             
             # 2. Retrieve relevant chunks
             data = vector_repository.similarity_search(
                 query_embedding=query_embedding,
                 course_id=course_id,
-                tenant_id=tenant_id,
+                siteidentifier=siteidentifier,
                 threshold=threshold,
                 limit=limit
             )
@@ -456,11 +449,6 @@ IMPORTANT:
                 return {
                     "message": error_message
                 }
-            
-            # Check if LLM generation is disabled - return only similarity search results
-            if not Config.RAG_ENABLE_LLM_GENERATION:
-                print("[RAG] LLM generation disabled - returning similarity search results only")
-                return RAGService._format_similarity_search_results(data)
             
             print("[RAG] Validation passed - generating response with LLM")
             

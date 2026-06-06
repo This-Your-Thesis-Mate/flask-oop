@@ -12,13 +12,13 @@ class TTSService:
     """Service for Text-to-Speech operations"""
     
     @staticmethod
-    def get_chunks_by_module(module_id, tenant_id):
+    def get_chunks_by_module(module_id, siteidentifier):
         """
-        Get all chunks from database for a specific module and tenant
+        Get all chunks from database for a specific module and site
         
         Args:
             module_id: Module ID to get chunks from
-            tenant_id: Tenant ID for data isolation
+            siteidentifier: Site Identifier for data isolation
         
         Returns:
             list: List of chunk dictionaries with id and chunk_text
@@ -30,10 +30,10 @@ class TTSService:
                 """
                 SELECT id, chunk_text 
                 FROM chunks 
-                WHERE module_id = %s AND tenant_id = %s
+                WHERE module_id = %s AND siteidentifier = %s
                 ORDER BY id ASC
                 """,
-                (int(module_id), int(tenant_id))
+                (int(module_id), str(siteidentifier))
             )
             
             rows = cursor.fetchall()
@@ -72,13 +72,13 @@ class TTSService:
             raise Exception(f"Error converting text to speech: {str(e)}")
     
     @staticmethod
-    def convert_chunks_to_speech(module_id, tenant_id, language='id', slow=False, output_dir=None):
+    def convert_chunks_to_speech(module_id, siteidentifier, language='id', slow=False, output_dir=None):
         """
         Convert all chunks from a module to individual MP3 files
         
         Args:
             module_id: Module ID to get chunks from
-            tenant_id: Tenant ID for data isolation
+            siteidentifier: Site Identifier for data isolation
             language: Language code (default 'id' for Indonesian)
             slow: Speak slowly (default False)
             output_dir: Directory to save MP3 files (optional)
@@ -88,7 +88,7 @@ class TTSService:
         """
         try:
             # 1. Get chunks from database
-            chunks = TTSService.get_chunks_by_module(module_id, tenant_id)
+            chunks = TTSService.get_chunks_by_module(module_id, siteidentifier)
             
             if not chunks:
                 return {
@@ -150,13 +150,13 @@ class TTSService:
             }
     
     @staticmethod
-    def convert_single_chunk_to_speech(chunk_id, tenant_id, language='id', slow=False):
+    def convert_single_chunk_to_speech(chunk_id, siteidentifier, language='id', slow=False):
         """
         Convert a single chunk to speech
         
         Args:
             chunk_id: Chunk ID to convert
-            tenant_id: Tenant ID for data isolation
+            siteidentifier: Site Identifier for data isolation
             language: Language code (default 'id' for Indonesian)
             slow: Speak slowly (default False)
         
@@ -166,14 +166,14 @@ class TTSService:
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
-            # Get chunk text from database with tenant isolation
+            # Get chunk text from database with site isolation
             cursor.execute(
                 """
                 SELECT chunk_text 
                 FROM chunks 
-                WHERE id = %s AND tenant_id = %s
+                WHERE id = %s AND siteidentifier = %s
                 """,
-                (int(chunk_id), int(tenant_id))
+                (int(chunk_id), str(siteidentifier))
             )
             
             row = cursor.fetchone()

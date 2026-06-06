@@ -1,6 +1,3 @@
-"""
-Quiz service for quiz generation
-"""
 import traceback
 from app.repositories import vector_repository
 from app.utils import embedding_client, azure_openai_client, quiz_parser
@@ -46,7 +43,7 @@ class QuizService:
         }
     
     @staticmethod
-    def generate_quiz(query_text, course_id, module_id, question_type, number_of_question, tenant_id, threshold=0.4, limit=5):
+    def generate_quiz(query_text, course_id, module_id, question_type, number_of_question, siteidentifier, threshold=0.4, limit=5):
         """
         Generate quiz questions based on query and course material
         
@@ -56,16 +53,16 @@ class QuizService:
             module_id: Module ID
             question_type: Type of questions (comma-separated)
             number_of_question: Number of questions (comma-separated)
-            tenant_id: Tenant ID (REQUIRED for data isolation)
+            siteidentifier: Site Identifier (REQUIRED for data isolation)
             threshold: Similarity threshold (default 0.4)
             limit: Maximum number of chunks to retrieve (default 5)
         
         Returns:
             dict: Parsed and original quiz questions
         """
-        # Validate tenant_id is provided
-        if not tenant_id:
-            raise Exception("tenant_id is required for data isolation")
+        # Validate siteidentifier is provided
+        if not siteidentifier:
+            raise Exception("siteidentifier is required for data isolation")
         
         try:
             # 1. Get query embedding
@@ -75,7 +72,7 @@ class QuizService:
             data = vector_repository.similarity_search(
                 query_embedding=query_embedding,
                 course_id=course_id,
-                tenant_id=tenant_id,
+                siteidentifier=siteidentifier,
                 threshold=threshold,
                 limit=limit,
                 module_id=module_id
@@ -85,11 +82,6 @@ class QuizService:
             
             if not data:
                 return None
-            
-            # Check if LLM generation is disabled - return only similarity search results
-            if not Config.RAG_ENABLE_LLM_GENERATION:
-                print("[QUIZ] LLM generation disabled - returning similarity search results only")
-                return QuizService._format_quiz_search_results(data, query_text, course_id, module_id)
             
             # 3. Combine retrieved texts
             combined_string = "".join([row[0] for row in data])
@@ -140,6 +132,4 @@ class QuizService:
             traceback.print_exc()
             raise Exception(f'Quiz generation failed: {str(e)}')
 
-
-# Singleton instance
 quiz_service = QuizService()

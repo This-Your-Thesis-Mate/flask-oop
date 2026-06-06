@@ -10,7 +10,7 @@ Form Data:
 - course_id: 1
 - course_name: "Algoritma dan Struktur Data"
 - module_id: 101
-- tenant_id: 5
+- siteidentifier: 5
 ```
 
 **cURL:**
@@ -20,7 +20,7 @@ curl -X POST http://localhost:5000/uploads \
   -F "course_id=1" \
   -F "course_name=Algoritma dan Struktur Data" \
   -F "module_id=101" \
-  -F "tenant_id=5"
+  -F "siteidentifier=5"
 ```
 
 ---
@@ -33,7 +33,7 @@ POST /chat
 {
   "prompt": "Jelaskan tentang algoritma dasar",
   "course_id": 1,
-  "tenant_id": 5,
+  "siteidentifier": 5,
   "threshold": 0.4,
   "limit": 5
 }
@@ -44,7 +44,7 @@ POST /chat
 {
   "prompt": "Jelaskan tentang algoritma dasar",
   "course_id": 1,
-  "tenant_id": 5
+  "siteidentifier": 5
 }
 ```
 
@@ -53,7 +53,7 @@ POST /chat
 {
   "prompt": "Jelaskan lebih detail",
   "course_id": 1,
-  "tenant_id": 5,
+  "siteidentifier": 5,
   "messages": [
     {
       "role": "user",
@@ -74,7 +74,7 @@ curl -X POST http://localhost:5000/chat \
   -d '{
     "prompt": "Jelaskan tentang algoritma dasar",
     "course_id": 1,
-    "tenant_id": 5,
+    "siteidentifier": 5,
     "threshold": 0.4,
     "limit": 5
   }'
@@ -91,7 +91,7 @@ POST /quiz
   "query": "Algoritma Dasar",
   "course_id": 1,
   "module_id": 101,
-  "tenant_id": 5,
+  "siteidentifier": 5,
   "question_type": "multiple_choice",
   "number_of_question": "5"
 }
@@ -103,7 +103,7 @@ POST /quiz
   "query": "Struktur Data",
   "course_id": 1,
   "module_id": 101,
-  "tenant_id": 5,
+  "siteidentifier": 5,
   "question_type": "multiple_choice, short_answer, essay",
   "number_of_question": "5, 3, 2"
 }
@@ -115,7 +115,7 @@ POST /quiz
   "query": "Algoritma Dasar",
   "course_id": 1,
   "module_id": 101,
-  "tenant_id": 5,
+  "siteidentifier": 5,
   "question_type": "multiple_choice, true_false",
   "number_of_question": "5, 3",
   "threshold": 0.5,
@@ -131,7 +131,7 @@ curl -X POST http://localhost:5000/quiz \
     "query": "Algoritma Dasar",
     "course_id": 1,
     "module_id": 101,
-    "tenant_id": 5,
+    "siteidentifier": 5,
     "question_type": "multiple_choice",
     "number_of_question": "5"
   }'
@@ -147,13 +147,13 @@ POST /generate-annotations
 {
   "course_id": 1,
   "module_id": 101,
-  "tenant_id": 5
+  "siteidentifier": 5
 }
 ```
 
 **Form Data (Alternative):**
 ```
-course_id=1&module_id=101&tenant_id=5
+course_id=1&module_id=101&siteidentifier=5
 ```
 
 **cURL (JSON):**
@@ -163,14 +163,14 @@ curl -X POST http://localhost:5000/generate-annotations \
   -d '{
     "course_id": 1,
     "module_id": 101,
-    "tenant_id": 5
+    "siteidentifier": 5
   }'
 ```
 
 **cURL (Form Data):**
 ```bash
 curl -X POST http://localhost:5000/generate-annotations \
-  -d "course_id=1&module_id=101&tenant_id=5"
+  -d "course_id=1&module_id=101&siteidentifier=5"
 ```
 
 ---
@@ -183,17 +183,17 @@ GET /get-annotations
 Query Parameters:
 - course_id: 1
 - module_id: 101
-- tenant_id: 5
+- siteidentifier: 5
 ```
 
 **Full URL:**
 ```
-http://localhost:5000/get-annotations?course_id=1&module_id=101&tenant_id=5
+http://localhost:5000/get-annotations?course_id=1&module_id=101&siteidentifier=5
 ```
 
 **cURL:**
 ```bash
-curl -X GET "http://localhost:5000/get-annotations?course_id=1&module_id=101&tenant_id=5"
+curl -X GET "http://localhost:5000/get-annotations?course_id=1&module_id=101&siteidentifier=5"
 ```
 
 ---
@@ -205,27 +205,27 @@ GET /get-annotations-list
 ```
 Query Parameters:
 - course_id: 1 (optional)
-- tenant_id: 5 (required)
+- siteidentifier: 5 (required)
 ```
 
 **Full URL (All):**
 ```
-http://localhost:5000/get-annotations-list?tenant_id=5
+http://localhost:5000/get-annotations-list?siteidentifier=5
 ```
 
 **Full URL (By Course):**
 ```
-http://localhost:5000/get-annotations-list?course_id=1&tenant_id=5
+http://localhost:5000/get-annotations-list?course_id=1&siteidentifier=5
 ```
 
 **cURL (All):**
 ```bash
-curl -X GET "http://localhost:5000/get-annotations-list?tenant_id=5"
+curl -X GET "http://localhost:5000/get-annotations-list?siteidentifier=5"
 ```
 
 **cURL (By Course):**
 ```bash
-curl -X GET "http://localhost:5000/get-annotations-list?course_id=1&tenant_id=5"
+curl -X GET "http://localhost:5000/get-annotations-list?course_id=1&siteidentifier=5"
 ```
 
 ---
@@ -233,7 +233,7 @@ curl -X GET "http://localhost:5000/get-annotations-list?course_id=1&tenant_id=5"
 ## Notes
 
 - Base URL: `http://localhost:5000`
-- Always include `tenant_id` in requests
+- Always include `siteidentifier` in requests
 - `course_id` is required for: uploads, chat, quiz, generate-annotations, get-annotations
 - `module_id` required for: quiz, generate-annotations, get-annotations
 - Optional params: `threshold`, `limit` (for chat & quiz)

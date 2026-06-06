@@ -16,20 +16,20 @@ class ModuleHandler(BaseRouteHandler):
         JSON body:
             - module_id: Module ID
             - course_id: Course ID
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
         
         Returns:
             JSON response with success message
         """
         module_id = request.json.get('module_id')
         course_id = request.json.get('course_id')
-        tenant_id = request.json.get('tenant_id')
+        siteidentifier = request.json.get('siteidentifier')
         
-        if not tenant_id:
-            return ModuleHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return ModuleHandler.error_response('siteidentifier is required', 400)
         
         try:
-            module_service.delete_module(module_id, course_id, tenant_id)
+            module_service.delete_module(module_id, course_id, siteidentifier)
             return ModuleHandler.success_response(None, 'Module deleted successfully.', 200)
         except Exception as e:
             if 'not found' in str(e).lower():

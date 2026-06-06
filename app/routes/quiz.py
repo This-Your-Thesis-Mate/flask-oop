@@ -17,7 +17,7 @@ class QuizHandler(BaseRouteHandler):
             - query: Topic or query for quiz
             - course_id: Course ID
             - module_id: Module ID
-            - tenant_id: Tenant ID (required for multi-tenancy)
+            - siteidentifier: Site Identifier (required for multi-tenancy)
             - question_type: Type of questions (comma-separated)
             - number_of_question: Number of questions (comma-separated)
             - threshold: Similarity threshold (optional, default 0.4)
@@ -31,12 +31,12 @@ class QuizHandler(BaseRouteHandler):
         query_text = request.json.get('query')
         course_id = request.json.get('course_id', 2)
         module_id = request.json.get('module_id', 6)
-        tenant_id = request.json.get('tenant_id')
+        siteidentifier = request.json.get('siteidentifier')
         question_type = request.json.get('question_type')
         number_of_question = request.json.get('number_of_question')
         
-        if not tenant_id:
-            return QuizHandler.error_response('tenant_id is required', 400)
+        if not siteidentifier:
+            return QuizHandler.error_response('siteidentifier is required', 400)
         
         try:
             result = quiz_service.generate_quiz(
@@ -45,7 +45,7 @@ class QuizHandler(BaseRouteHandler):
                 module_id=module_id,
                 question_type=question_type,
                 number_of_question=number_of_question,
-                tenant_id=tenant_id,
+                siteidentifier=siteidentifier,
                 threshold=threshold,
                 limit=limit
             )

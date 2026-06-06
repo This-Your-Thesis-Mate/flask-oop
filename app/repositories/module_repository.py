@@ -6,18 +6,18 @@ class ModuleRepository:
     """Repository for module-related database operations"""
     
     @staticmethod
-    def create_module(module_name, course_id, course_name, tenant_id, ref_module_id=None):
+    def create_module(module_name, course_id, course_name, siteidentifier, ref_module_id=None):
         """Create a new module"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
                 """
-                INSERT INTO modules (module_name, course_id, course_name, ref_module_id, tenant_id)
+                INSERT INTO modules (module_name, course_id, course_name, ref_module_id, siteidentifier)
                 VALUES (%s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-                (module_name, course_id, course_name, ref_module_id, tenant_id)
+                (module_name, course_id, course_name, ref_module_id, siteidentifier)
             )
             module_id = cursor.fetchone()[0]
             conn.commit()
@@ -30,8 +30,8 @@ class ModuleRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def get_module(course_id, ref_module_id, tenant_id):
-        """Get module by course_id and ref_module_id (user's module ID) and tenant_id"""
+    def get_module(course_id, ref_module_id, siteidentifier):
+        """Get module by course_id and ref_module_id (user's module ID) and siteidentifier"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
@@ -39,11 +39,11 @@ class ModuleRepository:
                 """
                 SELECT id, module_name, course_name 
                 FROM modules 
-                WHERE course_id = %s AND ref_module_id = %s AND tenant_id = %s
+                WHERE course_id = %s AND ref_module_id = %s AND siteidentifier = %s
                 ORDER BY id DESC
                 LIMIT 1
                 """,
-                (course_id, ref_module_id, tenant_id)
+                (course_id, ref_module_id, siteidentifier)
             )
             result = cursor.fetchone()
             return result
@@ -52,15 +52,15 @@ class ModuleRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def delete_module(ref_module_id, course_id, tenant_id):
-        """Delete module and related data by ref_module_id and tenant_id"""
+    def delete_module(ref_module_id, course_id, siteidentifier):
+        """Delete module and related data by ref_module_id and siteidentifier"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
             # Get internal module id
             cursor.execute(
-                "SELECT id FROM modules WHERE ref_module_id = %s AND course_id = %s AND tenant_id = %s",
-                (ref_module_id, course_id, tenant_id)
+                "SELECT id FROM modules WHERE ref_module_id = %s AND course_id = %s AND siteidentifier = %s",
+                (ref_module_id, course_id, siteidentifier)
             )
             module = cursor.fetchone()
             if not module:
@@ -86,19 +86,19 @@ class ModuleRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def get_modules_by_course(course_id, tenant_id):
-        """Get all modules by course_id and tenant_id"""
+    def get_modules_by_course(course_id, siteidentifier):
+        """Get all modules by course_id and siteidentifier"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
                 """
-                SELECT id, module_name, ref_module_id, course_id, course_name, tenant_id 
+                SELECT id, module_name, ref_module_id, course_id, course_name, siteidentifier 
                 FROM modules 
-                WHERE course_id = %s AND tenant_id = %s
+                WHERE course_id = %s AND siteidentifier = %s
                 ORDER BY id DESC
                 """,
-                (course_id, tenant_id)
+                (course_id, siteidentifier)
             )
             results = cursor.fetchall()
             return results
@@ -107,19 +107,19 @@ class ModuleRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def get_all_modules(tenant_id):
-        """Get all modules from all courses for a tenant"""
+    def get_all_modules(siteidentifier):
+        """Get all modules from all courses for a site"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
                 """
-                SELECT id, module_name, ref_module_id, course_id, course_name, tenant_id 
+                SELECT id, module_name, ref_module_id, course_id, course_name, siteidentifier 
                 FROM modules 
-                WHERE tenant_id = %s
+                WHERE siteidentifier = %s
                 ORDER BY course_id, id DESC
                 """,
-                (tenant_id,)
+                (siteidentifier,)
             )
             results = cursor.fetchall()
             return results
@@ -128,9 +128,9 @@ class ModuleRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def get_module_by_ref_id(ref_module_id, tenant_id, course_id=None):
+    def get_module_by_ref_id(ref_module_id, siteidentifier, course_id=None):
         """
-        Get module by ref_module_id and tenant_id
+        Get module by ref_module_id and siteidentifier
         Optionally filter by course_id for more precise lookup
         """
         conn = db_manager.get_connection()
@@ -140,25 +140,25 @@ class ModuleRepository:
                 # If course_id is provided, use it for more precise lookup
                 cursor.execute(
                     """
-                    SELECT id, module_name, ref_module_id, course_id, course_name, tenant_id 
+                    SELECT id, module_name, ref_module_id, course_id, course_name, siteidentifier 
                     FROM modules 
-                    WHERE ref_module_id = %s AND course_id = %s AND tenant_id = %s
+                    WHERE ref_module_id = %s AND course_id = %s AND siteidentifier = %s
                     ORDER BY id DESC
                     LIMIT 1
                     """,
-                    (ref_module_id, course_id, tenant_id)
+                    (ref_module_id, course_id, siteidentifier)
                 )
             else:
-                # Fall back to just ref_module_id and tenant_id
+                # Fall back to just ref_module_id and siteidentifier
                 cursor.execute(
                     """
-                    SELECT id, module_name, ref_module_id, course_id, course_name, tenant_id 
+                    SELECT id, module_name, ref_module_id, course_id, course_name, siteidentifier 
                     FROM modules 
-                    WHERE ref_module_id = %s AND tenant_id = %s
+                    WHERE ref_module_id = %s AND siteidentifier = %s
                     ORDER BY id DESC
                     LIMIT 1
                     """,
-                    (ref_module_id, tenant_id)
+                    (ref_module_id, siteidentifier)
                 )
             result = cursor.fetchone()
             return result
@@ -167,19 +167,19 @@ class ModuleRepository:
             db_manager.return_connection(conn)
     
     @staticmethod
-    def get_courses_by_tenant(tenant_id):
-        """Get all unique courses for a tenant"""
+    def get_courses_by_site(siteidentifier):
+        """Get all unique courses for a site"""
         conn = db_manager.get_connection()
         cursor = conn.cursor()
         try:
             cursor.execute(
                 """
-                SELECT DISTINCT course_id, course_name, tenant_id
+                SELECT DISTINCT course_id, course_name, siteidentifier
                 FROM modules 
-                WHERE tenant_id = %s
+                WHERE siteidentifier = %s
                 ORDER BY course_id DESC
                 """,
-                (tenant_id,)
+                (siteidentifier,)
             )
             results = cursor.fetchall()
             return results
