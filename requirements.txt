@@ -7,7 +7,7 @@ Werkzeug==3.0.3
 psycopg2-binary==2.9.9
 
 # OpenAI and Azure
-openai==1.35.0
+openai>=2.41.0
 
 # Groq AI
 groq==0.9.0
