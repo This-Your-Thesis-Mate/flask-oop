@@ -4,7 +4,6 @@ from app.services import upload_service
 
 upload_bp = Blueprint('upload', __name__)
 
-
 class UploadHandler(BaseRouteHandler):
     """Handler for upload operations"""
     
@@ -41,11 +40,8 @@ class UploadHandler(BaseRouteHandler):
             return UploadHandler.error_response(str(e), 500)
 
 
-# Create handler instance
 upload_handler = UploadHandler()
 
-
-# Register routes
 @upload_bp.route("/uploads", methods=['POST'])
 def upload_file():
     """Upload and process a document file"""

@@ -1,8 +1,20 @@
-import traceback
+import logging
+import sys
 from app.repositories import vector_repository
 from app.utils import embedding_client, azure_openai_client, quiz_parser
 from app.utils.prompts import ROLE_PROMPT, get_quiz_prompt
-from app.config import Config
+
+# Configure root logger to ensure logs appear
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    stream=sys.stdout,
+    force=True  # Override any existing logger configuration
+)
+
+logger = logging.getLogger(__name__)
+logger.info("QuizService logging initialized")
 
 
 class QuizService:
@@ -78,8 +90,6 @@ class QuizService:
                 module_id=module_id
             )
             
-            print(f"Retrieved {len(data)} chunks for quiz generation")
-            
             if not data:
                 return None
             
@@ -89,9 +99,6 @@ class QuizService:
             # 4. Parse question types and numbers
             question_types = [qt.strip() for qt in question_type.split(", ")]
             question_numbers = [qn.strip() for qn in number_of_question.split(", ")]
-            
-            print(f"Question types: {question_types}")
-            print(f"Question numbers: {question_numbers}")
             
             # 5. Generate quiz for each type
             result_keseluruhan = ''
@@ -104,22 +111,28 @@ class QuizService:
                     question_type=question_types[i]
                 )
                 
+                log_msg = f"Generating quiz [iteration {i+1}/{len(question_numbers)}]: type='{question_types[i]}', count={question_numbers[i]}"
+                logger.info(log_msg)
+                print(f"[QUIZ SERVICE] {log_msg}", flush=True)
+                
                 response = azure_openai_client.generate_completion(
                     messages=[{"role": "user", "content": quiz_prompt}],
                     temperature=0,
                     top_p=0.95
                 )
-                __import__('time').sleep(2)
+                
+                # Log the response (truncated to first 200 chars to avoid log bloat)
+                response_preview = response[:200].replace('\n', ' ') + ('...' if len(response) > 200 else '')
+                logger.info(f"Response [iteration {i+1}/{len(question_numbers)}] type='{question_types[i]}': {response_preview}")
+                print(f"[QUIZ SERVICE] Response [iteration {i+1}/{len(question_numbers)}] type='{question_types[i]}': {response_preview}", flush=True)
+                logger.debug(f"Full response [iteration {i+1}] type='{question_types[i]}':\n{response}")
                 
                 result_keseluruhan += "\n" + response
-            
-            print("Quiz generation result:\n", result_keseluruhan)
             
             # 6. Parse quiz
             try:
                 quiz_json = quiz_parser.parse_quiz(result_keseluruhan)
             except Exception as e:
-                print("Error parsing quiz:", e)
                 raise Exception("The response does not match the expected format. Please try changing the query to a more appropriate one.")
             
             return {
@@ -128,8 +141,7 @@ class QuizService:
             }
         
         except Exception as e:
-            print("Error in quiz generation:", e)
-            traceback.print_exc()
             raise Exception(f'Quiz generation failed: {str(e)}')
+
 
 quiz_service = QuizService()

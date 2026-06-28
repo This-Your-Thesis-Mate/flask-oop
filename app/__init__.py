@@ -1,8 +1,4 @@
-"""
-Flask application factory - maintained for backward compatibility
-"""
 from app.application import Application
-
 
 def create_app():
     """Create and configure Flask application"""
