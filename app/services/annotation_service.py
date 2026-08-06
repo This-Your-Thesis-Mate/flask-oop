@@ -39,6 +39,7 @@ class AnnotationService:
             
             annotations = annotation_helper.create_annotations_from_chunks(
                 chunks,
+                siteidentifier,
                 max_chars_per_page=500
             )
             

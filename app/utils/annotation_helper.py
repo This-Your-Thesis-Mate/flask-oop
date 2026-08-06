@@ -7,13 +7,14 @@ class AnnotationHelper:
     """Helper for creating annotations from chunks"""
     
     @staticmethod
-    def create_annotations_from_chunks(chunks, max_chars_per_page=None):
+    def create_annotations_from_chunks(chunks, siteidentifier, max_chars_per_page=None):
         """
         Menggabungkan chunks menjadi pages dengan maksimal karakter per halaman.
         Text akan dibersihkan terlebih dahulu sebelum disimpan.
         
         Args:
             chunks: List of text chunks
+            siteidentifier: Site Identifier
             max_chars_per_page: Maksimal karakter per halaman
         
         Returns:
@@ -44,7 +45,7 @@ class AnnotationHelper:
                 if space_left <= 0:
                     # Page is full, save and create new page
                     if current_text.strip():
-                        annotations.append(Annotation(current_page, current_text.strip()))
+                        annotations.append(Annotation(current_page, current_text.strip(), siteidentifier))
                         current_page += 1
                         current_text = ""
                     space_left = max_chars_per_page
@@ -66,13 +67,13 @@ class AnnotationHelper:
                     
                     # Save full page
                     if len(current_text) >= max_chars_per_page - 10:
-                        annotations.append(Annotation(current_page, current_text.strip()))
+                        annotations.append(Annotation(current_page, current_text.strip(), siteidentifier))
                         current_page += 1
                         current_text = ""
         
         # Save last page if there's remaining text
         if current_text.strip():
-            annotations.append(Annotation(current_page, current_text.strip()))
+            annotations.append(Annotation(current_page, current_text.strip(), siteidentifier))
         
         return annotations
 
