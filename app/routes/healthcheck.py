@@ -30,7 +30,7 @@ class HealthCheckHandler(BaseRouteHandler):
         """
         return jsonify({
             'service': 'Splace Classroom API',
-            'version': '2.0',
+            'version': '1.0',
             'status': 'running'
         })
 
